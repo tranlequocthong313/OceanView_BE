@@ -1,0 +1,13 @@
+{% extends 'admin/change_form.html' %} 
+{% block submit_buttons_bottom %}
+    {% if original.is_banned %}
+        <div class="submit-row">
+            <input type="submit" value="Mở khóa tài khoản" style='background-color: green;' name="_unban-user" />
+        </div>
+    {% else %}
+        <div class="submit-row">
+            <input type="submit" value="Khóa tài khoản" style='background-color: #ba2121;' name="_ban-user" />
+        </div>
+    {% endif %}
+    {{ block.super }}
+{% endblock %}

@@ -1,0 +1,14 @@
+CHUNG CƯ OCEANVIEW
+Nhơn Đức - Nhà Bè- TP HCM | Số điện thoại: 0228812345
+
+Xin chào {{user.personal_information.full_name}},
+Chúng tôi vừa tạo một tài khoản cư dân cho bạn.
+Thông tin đăng nhập của bạn như sau:
+
+    Resident ID: {{user.resident_id}}
+    Password: {{password}}
+
+Đây là thông tin quan trọng để bạn có thể truy cập vào hệ thống của chúng tôi. Xin vui lòng giữ thông tin này cẩn thận và không chia sẻ với người khác.
+Nếu bạn có bất kỳ câu hỏi hoặc cần sự hỗ trợ, vui lòng liên hệ chúng tôi qua số điện thoại 0228812345.
+
+Trân trọng!

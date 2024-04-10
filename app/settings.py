@@ -17,8 +17,17 @@ load_dotenv()
 import os
 from pathlib import Path
 
+import cloudinary
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+
+ENVIRONMENT = os.environ.get("ENVIRONMENT", default="development")
+
+
+def is_development_env():
+    return ENVIRONMENT == "development"
 
 
 # Quick-start development settings - unsuitable for production
@@ -28,7 +37,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = int(os.environ.get("DEBUG", default=1))
+DEBUG = is_development_env()
 
 ALLOWED_HOSTS = [
     "192.168.1.176",
@@ -41,15 +50,26 @@ ALLOWED_HOSTS = [
 # Application definition
 
 INSTALLED_APPS = [
+    "user.apps.UserConfig",
+
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+
+    "rest_framework",
+    "drf_yasg",
+    "oauth2_provider",
+    "corsheaders",
+    "invoice.apps.InvoiceConfig",
+    "service.apps.ServiceConfig",
+    "apartment.apps.ApartmentConfig",
 ]
 
 MIDDLEWARE = [
+    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -57,6 +77,8 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+
+    'user.middlewares.SendOTPRateLimitMiddleware',
 ]
 
 ROOT_URLCONF = "app.urls"
@@ -64,7 +86,7 @@ ROOT_URLCONF = "app.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": [os.path.join(BASE_DIR, 'templates')],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -85,8 +107,12 @@ WSGI_APPLICATION = "app.wsgi.application"
 
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+        "ENGINE": "django.db.backends.mysql",
+        "NAME": os.environ.get("MYSQL_DATABASE"),
+        "USER": os.environ.get("MYSQL_USER"),
+        "PASSWORD": os.environ.get("MYSQL_PASSWORD"),
+        "HOST": os.environ.get("MYSQL_HOST"),
+        "PORT": os.environ.get("MYSQL_PORT"),
     }
 }
 
@@ -134,6 +160,109 @@ STATIC_URL = "/static/"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-ENVIRONMENT = os.environ.get("ENVIRONMENT", default="development")
+COMPANY_NAME = "OceanView"
 
-MEDIA_ROOT = "%s/app/static" % BASE_DIR
+AUTH_USER_MODEL = "user.User"
+
+cloudinary.config(
+    cloud_name=os.environ.get("CLOUDINARY_NAME"),
+    api_key=os.environ.get("CLOUDINARY_API_KEY"),
+    api_secret=os.environ.get("CLOUDINARY_API_SECRET"),
+)
+
+REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": (
+        "oauth2_provider.contrib.rest_framework.OAuth2Authentication",
+    ),
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework.permissions.IsAuthenticated",
+    ],
+}
+
+CLIENT_ID=os.environ.get("CLIENT_ID")
+CLIENT_SECRET=os.environ.get("CLIENT_SECRET")
+
+CORS_ALLOW_ALL_ORIGINS = is_development_env()
+
+STATIC_ROOT = os.path.join(BASE_DIR, "static")
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "standard": {"format": "%(asctime)s %(levelname)s %(name)s %(message)s"},
+    },
+    "handlers": {
+        "console": {
+            "level": "INFO",
+            "class": "logging.StreamHandler",
+            "formatter": "standard",
+            "filters": [],
+        },
+    },
+    "loggers": {
+        logger_name: {"level": "WARNING", "propagate": True}
+        for logger_name in (
+            "django",
+            "django.request",
+            "django.db.backends",
+            "django.template",
+        )
+    },
+    "root": {"level": "DEBUG", "handlers": ["console"]},
+}
+
+LOGGING["formatters"]["colored"] = {
+    "()": "colorlog.ColoredFormatter",
+    "format": "%(log_color)s%(asctime)s %(levelname)s %(name)s %(bold_white)s%(message)s",
+}
+LOGGING["handlers"]["console"]["level"] = "DEBUG"
+LOGGING["handlers"]["console"]["formatter"] = "colored"
+
+SWAGGER_SETTINGS = {
+   'USE_SESSION_AUTH': True,
+   'SECURITY_DEFINITIONS': {
+      'OceanView API - Swagger': {
+         'type': 'oauth2',
+         'tokenUrl': '/o/token/',
+         'flow': 'password',
+      }
+   },
+   'OAUTH2_CONFIG': {
+      'clientId': CLIENT_ID,
+      'appName': COMPANY_NAME
+   },
+}
+
+TWILIO_SID = os.environ.get("TWILIO_SID")
+TWILIO_TOKEN = os.environ.get("TWILIO_TOKEN")
+TWILIO_NUMBER = os.environ.get("TWILIO_NUMBER")
+TWILIO_SERVICE_SID = os.environ.get("TWILIO_SERVICE_SID")
+TWILIO_SENDGRID_API_KEY = os.environ.get("TWILIO_SENDGRID_API_KEY")
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER")
+EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD")
+DEFAULT_FROM_EMAIL = f"{COMPANY_NAME} <{os.environ.get("EMAIL_HOST_USER")}>"
+
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": "redis://127.0.0.1:6379",
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            "CONNECTION_POOL_KWARGS": {"max_connections": 100}
+        }
+    }
+}
+
+SESSION_ENGINE = "django.contrib.sessions.backends.cache"
+SESSION_CACHE_ALIAS = "default"
+
+HASHING_SALT = os.environ.get('HASHING_SALT')
+
+RESET_PASSWORD_TOKEN_EXPIRE_TIME = int(os.environ.get('RESET_PASSWORD_TOKEN_EXPIRE_TIME'))
+RATE_LIMIT_EXPIRE_TIME = 60

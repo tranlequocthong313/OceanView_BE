@@ -1,0 +1,9 @@
+{% extends 'admin/change_form.html' %} 
+{% block submit_buttons_bottom %}
+    {% if original.is_issued == False %}
+        <div class="submit-row">
+            <input type="submit" value="Cấp phát tài khoản" name="_issue-account" />
+        </div>
+    {% endif %}
+    {{ block.super }}
+{% endblock %}
