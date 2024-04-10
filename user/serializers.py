@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+from django.contrib.auth.password_validation import validate_password
 from django.forms import IntegerField
 from rest_framework.serializers import (
     CharField,
@@ -6,6 +7,7 @@ from rest_framework.serializers import (
     ModelSerializer,
     Serializer,
     SerializerMethodField,
+    ValidationError,
 )
 
 from .models import PersonalInformation
@@ -66,7 +68,7 @@ class TokenSerializer(Serializer):
 
 class ActiveUserSerializer(ModelSerializer):
     avatar = ImageField()
-    password = CharField(write_only=True, required=True)
+    password = CharField(write_only=True, required=True, validators=[validate_password])
 
     class Meta:
         model = get_user_model()
@@ -86,20 +88,11 @@ class ActiveUserSerializer(ModelSerializer):
 
 class LoginSerializer(Serializer):
     username = CharField(required=True)
-    password = CharField(write_only=True, required=True)
-
-    class Meta:
-        fields = (
-            "username",
-            "password",
-        )
+    password = CharField(write_only=True, required=True, validators=[validate_password])
 
 
 class ForgotPasswordSerializer(Serializer):
     resident_id = CharField(required=True)
-
-    class Meta:
-        fields = ("resident_id",)
 
 
 class SendOTPSerializer(Serializer):
@@ -109,10 +102,15 @@ class SendOTPSerializer(Serializer):
 
 class VerifyOTPSerializer(Serializer):
     resident_id = CharField(required=True)
-    method = CharField(required=True)
     otp = CharField(required=True)
 
 
 class ResetPasswordSerializer(Serializer):
-    password = CharField(required=True)
-    confirm_password = CharField(required=True)
+    password = CharField(required=True, validators=[validate_password])
+    confirm_password = CharField(required=True, validators=[validate_password])
+
+    def validate(self, attrs):
+        if attrs["password"] != attrs["confirm_password"]:
+            raise ValidationError({"password": "Password fields didn't match."})
+
+        return attrs
