@@ -1,0 +1,2 @@
+Resident ID: {{user.resident_id}}
+Password: {{password}}

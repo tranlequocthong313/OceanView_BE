@@ -1,0 +1,52 @@
+{% extends "admin/base_site.html" %} {% block extrastyle %} {{ block.super }}
+<!-- apartment_map.html -->
+<style>
+  /* CSS styles for floors */
+  .floor {
+    background-color: red;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    padding: 10px;
+    margin: 10px 0;
+    overflow-x: auto; /* Allow horizontal scrolling */
+  }
+  /* CSS styles for apartments */
+  .apartment {
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    padding: 10px;
+    margin: 5px;
+    display: inline-block;
+    width: 100px;
+    height: 100px;
+    text-align: center;
+  }
+  /* Define different colors for different apartment statuses */
+  .empty {
+    background-color: #ccc;
+  }
+  .inhabited {
+    background-color: #00ff00;
+  }
+  .about-to-move {
+    background-color: #ffd700;
+  }
+</style>
+{% endblock %} {% block content %}
+<!-- Display floors -->
+{% for floor_number in floor_numbers %}
+<div class="floor">
+  <h2>Floor {{ floor_number }}</h2>
+  <ul class="apartment-list">
+    <!-- Display apartments on the current floor -->
+    {% for apartment in apartments %}
+    <li
+      class="apartment {% if apartment.status == 'E' %}empty{% elif apartment.status == 'I' %}inhabited{% elif apartment.status == 'A' %}about-to-move{% endif %}"
+    >
+      <p>{{ apartment.room_number }}</p>
+      <p>{{ apartment.status }}</p>
+    </li>
+    {% endfor %}
+  </ul>
+</div>
+{% endfor %} {% endblock %}
