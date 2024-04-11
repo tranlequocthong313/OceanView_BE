@@ -99,4 +99,3 @@ class Apartment(MyBaseModel):
 
     def __str__(self) -> str:
         return str(self.room_number)
-
