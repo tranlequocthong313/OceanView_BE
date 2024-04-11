@@ -4,6 +4,7 @@ from django.forms import IntegerField
 from rest_framework.serializers import (
     CharField,
     ImageField,
+    ListField,
     ModelSerializer,
     Serializer,
     SerializerMethodField,
@@ -66,6 +67,14 @@ class TokenSerializer(Serializer):
     scope = CharField()
 
 
+class LogonUserSerializer(UserSerializer):
+    token = TokenSerializer()
+
+    class Meta:
+        model = UserSerializer.Meta.model
+        fields = UserSerializer.Meta.fields + ["token"]
+
+
 class ActiveUserSerializer(ModelSerializer):
     avatar = ImageField()
     password = CharField(write_only=True, required=True, validators=[validate_password])
@@ -93,6 +102,14 @@ class LoginSerializer(Serializer):
 
 class ForgotPasswordSerializer(Serializer):
     resident_id = CharField(required=True)
+
+
+class ResetPasswordMethodSerializer(Serializer):
+    methods = ListField(required=True)
+
+
+class TokenResetPasswordSerializer(Serializer):
+    token = CharField(required=True)
 
 
 class SendOTPSerializer(Serializer):

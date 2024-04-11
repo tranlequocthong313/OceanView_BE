@@ -7,6 +7,7 @@ from django.core.cache import cache
 from django.core.exceptions import ObjectDoesNotExist
 from django.template.response import TemplateResponse
 from django.utils import timezone
+from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.generics import GenericAPIView
@@ -23,7 +24,10 @@ from .serializers import (
     ActiveUserSerializer,
     ForgotPasswordSerializer,
     LoginSerializer,
+    LogonUserSerializer,
+    ResetPasswordMethodSerializer,
     ResetPasswordSerializer,
+    TokenResetPasswordSerializer,
     UserSerializer,
     VerifyOTPSerializer,
 )
@@ -38,6 +42,10 @@ class UserView(ViewSet, GenericAPIView):
     def get_queryset(self):
         return User.objects.all()
 
+    @extend_schema(
+        request=ActiveUserSerializer,
+        responses={200: UserSerializer},
+    )
     @action(
         methods=["patch"],
         url_path="active",
@@ -70,14 +78,23 @@ class UserView(ViewSet, GenericAPIView):
                 {"message": "User does not exist"}, status=status.HTTP_404_NOT_FOUND
             )
 
+    @extend_schema(
+        request=None,
+        responses={200: UserSerializer},
+    )
     @action(
         methods=["get"],
         url_path="current",
         detail=False,
+        serializer_class=UserSerializer,
     )
     def current_user(self, request):
         return Response(self.serializer_class(request.user).data)
 
+    @extend_schema(
+        request=LoginSerializer,
+        responses={200: LogonUserSerializer},
+    )
     @action(
         methods=["post"],
         url_path="login",
@@ -119,6 +136,10 @@ class UserView(ViewSet, GenericAPIView):
         else:
             return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+    @extend_schema(
+        request=ForgotPasswordSerializer,
+        responses={200: ResetPasswordMethodSerializer},
+    )
     @action(
         methods=["post"],
         url_path="forgot-password",
@@ -155,6 +176,10 @@ class UserView(ViewSet, GenericAPIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+    @extend_schema(
+        request=ForgotPasswordSerializer,
+        responses=None,
+    )
     @action(
         methods=["post"],
         url_path="send-reset-password-link",
@@ -209,6 +234,10 @@ class UserView(ViewSet, GenericAPIView):
         else:
             return http.respond_serializer_error(serializer)
 
+    @extend_schema(
+        request=ForgotPasswordSerializer,
+        responses=None,
+    )
     @action(
         methods=["post"],
         url_path="send-otp",
@@ -247,6 +276,10 @@ class UserView(ViewSet, GenericAPIView):
         else:
             return http.respond_serializer_error(serializer)
 
+    @extend_schema(
+        request=VerifyOTPSerializer,
+        responses={200: TokenResetPasswordSerializer},
+    )
     @action(
         methods=["post"],
         url_path="verify-otp",
@@ -320,6 +353,8 @@ class UserView(ViewSet, GenericAPIView):
 
         return True, payload
 
+    @extend_schema(request=None, responses=None, methods=["GET"])
+    @extend_schema(request=ResetPasswordSerializer, responses=None, methods=["POST"])
     @action(
         methods=["get", "post"],
         detail=False,
