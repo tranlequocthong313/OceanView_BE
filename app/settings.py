@@ -18,6 +18,9 @@ import os
 from pathlib import Path
 
 import cloudinary
+import pymysql
+
+pymysql.install_as_MySQLdb()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -40,6 +43,8 @@ SECRET_KEY = os.environ.get("SECRET_KEY")
 DEBUG = is_development_env()
 
 ALLOWED_HOSTS = [
+    "0.0.0.0",
+    "192.168.0.8",
     "192.168.1.176",
     "localhost",
     "127.0.0.1",
@@ -51,16 +56,15 @@ ALLOWED_HOSTS = [
 
 INSTALLED_APPS = [
     "user.apps.UserConfig",
-
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-
     "rest_framework",
-    "drf_yasg",
+    "drf_spectacular",
+    "drf_spectacular_sidecar",
     "oauth2_provider",
     "corsheaders",
     "invoice.apps.InvoiceConfig",
@@ -77,8 +81,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-
-    'user.middlewares.SendOTPRateLimitMiddleware',
+    "user.middlewares.SendOTPRateLimitMiddleware",
 ]
 
 ROOT_URLCONF = "app.urls"
@@ -86,7 +89,7 @@ ROOT_URLCONF = "app.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [os.path.join(BASE_DIR, 'templates')],
+        "DIRS": [os.path.join(BASE_DIR, "templates")],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -115,7 +118,6 @@ DATABASES = {
         "PORT": os.environ.get("MYSQL_PORT"),
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/3.2/ref/settings/#auth-password-validators
@@ -177,10 +179,11 @@ REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.IsAuthenticated",
     ],
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
 }
 
-CLIENT_ID=os.environ.get("CLIENT_ID")
-CLIENT_SECRET=os.environ.get("CLIENT_SECRET")
+CLIENT_ID = os.environ.get("CLIENT_ID")
+CLIENT_SECRET = os.environ.get("CLIENT_SECRET")
 
 CORS_ALLOW_ALL_ORIGINS = is_development_env()
 
@@ -220,18 +223,15 @@ LOGGING["handlers"]["console"]["level"] = "DEBUG"
 LOGGING["handlers"]["console"]["formatter"] = "colored"
 
 SWAGGER_SETTINGS = {
-   'USE_SESSION_AUTH': True,
-   'SECURITY_DEFINITIONS': {
-      'OceanView API - Swagger': {
-         'type': 'oauth2',
-         'tokenUrl': '/o/token/',
-         'flow': 'password',
-      }
-   },
-   'OAUTH2_CONFIG': {
-      'clientId': CLIENT_ID,
-      'appName': COMPANY_NAME
-   },
+    "USE_SESSION_AUTH": True,
+    "SECURITY_DEFINITIONS": {
+        "OceanView API - Swagger": {
+            "type": "oauth2",
+            "tokenUrl": "/o/token/",
+            "flow": "password",
+        }
+    },
+    "OAUTH2_CONFIG": {"clientId": CLIENT_ID, "appName": COMPANY_NAME},
 }
 
 TWILIO_SID = os.environ.get("TWILIO_SID")
@@ -240,13 +240,13 @@ TWILIO_NUMBER = os.environ.get("TWILIO_NUMBER")
 TWILIO_SERVICE_SID = os.environ.get("TWILIO_SERVICE_SID")
 TWILIO_SENDGRID_API_KEY = os.environ.get("TWILIO_SENDGRID_API_KEY")
 
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = "smtp.gmail.com"
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER")
 EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD")
-DEFAULT_FROM_EMAIL = f"{COMPANY_NAME} <{os.environ.get("EMAIL_HOST_USER")}>"
+DEFAULT_FROM_EMAIL = f"{COMPANY_NAME} <{os.environ.get('EMAIL_HOST_USER')}>"
 
 CACHES = {
     "default": {
@@ -254,15 +254,26 @@ CACHES = {
         "LOCATION": "redis://127.0.0.1:6379",
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
-            "CONNECTION_POOL_KWARGS": {"max_connections": 100}
-        }
+            "CONNECTION_POOL_KWARGS": {"max_connections": 100},
+        },
     }
 }
 
 SESSION_ENGINE = "django.contrib.sessions.backends.cache"
 SESSION_CACHE_ALIAS = "default"
 
-HASHING_SALT = os.environ.get('HASHING_SALT')
+HASHING_SALT = os.environ.get("HASHING_SALT")
 
-RESET_PASSWORD_TOKEN_EXPIRE_TIME = int(os.environ.get('RESET_PASSWORD_TOKEN_EXPIRE_TIME'))
+RESET_PASSWORD_TOKEN_EXPIRE_TIME = int(
+    os.environ.get("RESET_PASSWORD_TOKEN_EXPIRE_TIME")
+)
 RATE_LIMIT_EXPIRE_TIME = 60
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "OceanView API",
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
+    "SWAGGER_UI_DIST": "SIDECAR",  # shorthand to use the sidecar instead
+    "SWAGGER_UI_FAVICON_HREF": "SIDECAR",
+    "REDOC_DIST": "SIDECAR",
+}
