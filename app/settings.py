@@ -240,7 +240,8 @@ TWILIO_NUMBER = os.environ.get("TWILIO_NUMBER")
 TWILIO_SERVICE_SID = os.environ.get("TWILIO_SERVICE_SID")
 TWILIO_SENDGRID_API_KEY = os.environ.get("TWILIO_SENDGRID_API_KEY")
 
-EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+# EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_BACKEND = "backend.email.EmailBackend"
 EMAIL_HOST = "smtp.gmail.com"
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
