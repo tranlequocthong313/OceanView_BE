@@ -1,6 +1,6 @@
 import logging
 import traceback
-from smtplib import SMTPException
+from smtplib import SMTPAuthenticationError, SMTPException
 
 from django.contrib import admin, messages
 from django.contrib.auth import get_user_model
@@ -158,6 +158,9 @@ class PersonalInformationAdmin(MyBaseModelAdmin):
             except OverflowError as err:
                 log.error(traceback.format_exc())
                 messages.add_message(request, messages.ERROR, err)
+            except SMTPAuthenticationError:
+                log.error(traceback.format_exc())
+                raise Exception()
             except SMTPException:
                 log.error(traceback.format_exc())
             return False
