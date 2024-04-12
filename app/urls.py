@@ -20,15 +20,15 @@ from drf_spectacular.views import (
     SpectacularAPIView,
     SpectacularSwaggerView,
 )
-from rest_framework import permissions
 
-from . import settings
 from .admin import admin_site
 
 urlpatterns = [
     path("", include("user.urls")),
     path("admin/", admin_site.urls),
     path("o/", include("oauth2_provider.urls", namespace="oauth2_provider")),
+    path("accounts/login/", LoginView.as_view(template_name="admin/login.html")),
+    path("accounts/logout/", LogoutView.as_view()),
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
     path(
         "api/schema/swagger-ui/",
