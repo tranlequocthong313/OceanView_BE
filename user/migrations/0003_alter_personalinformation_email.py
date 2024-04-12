@@ -4,15 +4,16 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('user', '0002_alter_user_previous_status_alter_user_status'),
+        ("user", "0002_alter_user_previous_status_alter_user_status"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='personalinformation',
-            name='email',
-            field=models.EmailField(blank=True, max_length=254, null=True, unique=True, verbose_name='Email'),
+            model_name="personalinformation",
+            name="email",
+            field=models.EmailField(
+                blank=True, max_length=254, null=True, unique=True, verbose_name="Email"
+            ),
         ),
     ]

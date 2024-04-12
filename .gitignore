@@ -162,3 +162,7 @@ cython_debug/
 .vscode
 
 mysql
+
+.ruff_cache
+
+/tmp/redis.db

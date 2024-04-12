@@ -5,15 +5,18 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('apartment', '0001_initial'),
+        ("apartment", "0001_initial"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='apartmentbuilding',
-            name='phone_number',
-            field=models.CharField(max_length=11, validators=[django.core.validators.MinLengthValidator(10)], verbose_name='Số điện thoại'),
+            model_name="apartmentbuilding",
+            name="phone_number",
+            field=models.CharField(
+                max_length=11,
+                validators=[django.core.validators.MinLengthValidator(10)],
+                verbose_name="Số điện thoại",
+            ),
         ),
     ]

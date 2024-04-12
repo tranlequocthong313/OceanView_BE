@@ -8,49 +8,189 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
-        ('auth', '0012_alter_user_first_name_max_length'),
+        ("auth", "0012_alter_user_first_name_max_length"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='PersonalInformation',
+            name="PersonalInformation",
             fields=[
-                ('created_date', models.DateTimeField(auto_now_add=True, verbose_name='Ngày tạo')),
-                ('updated_date', models.DateTimeField(auto_now=True, verbose_name='Ngày cập nhật')),
-                ('citizen_id', models.CharField(max_length=12, primary_key=True, serialize=False, validators=[django.core.validators.MinLengthValidator(12)], verbose_name='Số căn cước công dân')),
-                ('full_name', models.CharField(max_length=50, verbose_name='Họ tên')),
-                ('date_of_birth', models.DateField(null=True, verbose_name='Ngày sinh')),
-                ('phone_number', models.CharField(max_length=11, unique=True, validators=[django.core.validators.MinLengthValidator(10)], verbose_name='Số điện thoại')),
-                ('email', models.EmailField(max_length=254, unique=True, verbose_name='Email')),
-                ('hometown', models.CharField(max_length=50, null=True, verbose_name='Quê quán')),
-                ('gender', models.CharField(choices=[('M', 'Nam'), ('F', 'Nữ')], default='M', max_length=1, verbose_name='Giới tính')),
+                (
+                    "created_date",
+                    models.DateTimeField(auto_now_add=True, verbose_name="Ngày tạo"),
+                ),
+                (
+                    "updated_date",
+                    models.DateTimeField(auto_now=True, verbose_name="Ngày cập nhật"),
+                ),
+                (
+                    "citizen_id",
+                    models.CharField(
+                        max_length=12,
+                        primary_key=True,
+                        serialize=False,
+                        validators=[django.core.validators.MinLengthValidator(12)],
+                        verbose_name="Số căn cước công dân",
+                    ),
+                ),
+                ("full_name", models.CharField(max_length=50, verbose_name="Họ tên")),
+                (
+                    "date_of_birth",
+                    models.DateField(null=True, verbose_name="Ngày sinh"),
+                ),
+                (
+                    "phone_number",
+                    models.CharField(
+                        max_length=11,
+                        unique=True,
+                        validators=[django.core.validators.MinLengthValidator(10)],
+                        verbose_name="Số điện thoại",
+                    ),
+                ),
+                (
+                    "email",
+                    models.EmailField(
+                        max_length=254, unique=True, verbose_name="Email"
+                    ),
+                ),
+                (
+                    "hometown",
+                    models.CharField(max_length=50, null=True, verbose_name="Quê quán"),
+                ),
+                (
+                    "gender",
+                    models.CharField(
+                        choices=[("M", "Nam"), ("F", "Nữ")],
+                        default="M",
+                        max_length=1,
+                        verbose_name="Giới tính",
+                    ),
+                ),
             ],
             options={
-                'abstract': False,
+                "abstract": False,
             },
         ),
         migrations.CreateModel(
-            name='User',
+            name="User",
             fields=[
-                ('last_login', models.DateTimeField(blank=True, null=True, verbose_name='last login')),
-                ('resident_id', models.CharField(max_length=6, primary_key=True, serialize=False, unique=True, validators=[django.core.validators.MinLengthValidator(6)], verbose_name='Mã số cư dân')),
-                ('password', models.CharField(max_length=128, validators=[django.core.validators.MinLengthValidator(8)], verbose_name='Mật khẩu')),
-                ('avatar', cloudinary.models.CloudinaryField(blank=True, max_length=255, null=True, verbose_name='Ảnh đại diện')),
-                ('is_staff', models.BooleanField(default=False, verbose_name='Là staff')),
-                ('is_superuser', models.BooleanField(default=False, verbose_name='Là superuser')),
-                ('previous_status', models.CharField(blank=True, choices=[('N', 'Chưa cấp phát'), ('I', 'Đã cấp phát'), ('U', 'Đã kích hoạt'), ('B', 'Bị khóa')], max_length=1, null=True, verbose_name='Trạng thái trước khị bị ban')),
-                ('status', models.CharField(choices=[('N', 'Chưa cấp phát'), ('I', 'Đã cấp phát'), ('U', 'Đã kích hoạt'), ('B', 'Bị khóa')], default='N', max_length=1, verbose_name='Trạng thái')),
-                ('groups', models.ManyToManyField(blank=True, help_text='The groups this user belongs to. A user will get all permissions granted to each of their groups.', related_name='user_set', related_query_name='user', to='auth.group', verbose_name='groups')),
-                ('issued_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to=settings.AUTH_USER_MODEL, verbose_name='Cấp phát bởi')),
-                ('user_permissions', models.ManyToManyField(blank=True, help_text='Specific permissions for this user.', related_name='user_set', related_query_name='user', to='auth.permission', verbose_name='user permissions')),
-                ('personal_information', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, to='user.personalinformation', verbose_name='Thông tin cá nhân')),
+                (
+                    "last_login",
+                    models.DateTimeField(
+                        blank=True, null=True, verbose_name="last login"
+                    ),
+                ),
+                (
+                    "resident_id",
+                    models.CharField(
+                        max_length=6,
+                        primary_key=True,
+                        serialize=False,
+                        unique=True,
+                        validators=[django.core.validators.MinLengthValidator(6)],
+                        verbose_name="Mã số cư dân",
+                    ),
+                ),
+                (
+                    "password",
+                    models.CharField(
+                        max_length=128,
+                        validators=[django.core.validators.MinLengthValidator(8)],
+                        verbose_name="Mật khẩu",
+                    ),
+                ),
+                (
+                    "avatar",
+                    cloudinary.models.CloudinaryField(
+                        blank=True,
+                        max_length=255,
+                        null=True,
+                        verbose_name="Ảnh đại diện",
+                    ),
+                ),
+                (
+                    "is_staff",
+                    models.BooleanField(default=False, verbose_name="Là staff"),
+                ),
+                (
+                    "is_superuser",
+                    models.BooleanField(default=False, verbose_name="Là superuser"),
+                ),
+                (
+                    "previous_status",
+                    models.CharField(
+                        blank=True,
+                        choices=[
+                            ("N", "Chưa cấp phát"),
+                            ("I", "Đã cấp phát"),
+                            ("U", "Đã kích hoạt"),
+                            ("B", "Bị khóa"),
+                        ],
+                        max_length=1,
+                        null=True,
+                        verbose_name="Trạng thái trước khị bị ban",
+                    ),
+                ),
+                (
+                    "status",
+                    models.CharField(
+                        choices=[
+                            ("N", "Chưa cấp phát"),
+                            ("I", "Đã cấp phát"),
+                            ("U", "Đã kích hoạt"),
+                            ("B", "Bị khóa"),
+                        ],
+                        default="N",
+                        max_length=1,
+                        verbose_name="Trạng thái",
+                    ),
+                ),
+                (
+                    "groups",
+                    models.ManyToManyField(
+                        blank=True,
+                        help_text="The groups this user belongs to. A user will get all permissions granted to each of their groups.",
+                        related_name="user_set",
+                        related_query_name="user",
+                        to="auth.group",
+                        verbose_name="groups",
+                    ),
+                ),
+                (
+                    "issued_by",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        to=settings.AUTH_USER_MODEL,
+                        verbose_name="Cấp phát bởi",
+                    ),
+                ),
+                (
+                    "user_permissions",
+                    models.ManyToManyField(
+                        blank=True,
+                        help_text="Specific permissions for this user.",
+                        related_name="user_set",
+                        related_query_name="user",
+                        to="auth.permission",
+                        verbose_name="user permissions",
+                    ),
+                ),
+                (
+                    "personal_information",
+                    models.OneToOneField(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="user.personalinformation",
+                        verbose_name="Thông tin cá nhân",
+                    ),
+                ),
             ],
             options={
-                'abstract': False,
+                "abstract": False,
             },
         ),
     ]

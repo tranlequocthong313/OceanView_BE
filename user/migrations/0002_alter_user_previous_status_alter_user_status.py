@@ -4,20 +4,40 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('user', '0001_initial'),
+        ("user", "0001_initial"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='user',
-            name='previous_status',
-            field=models.CharField(blank=True, choices=[('N', 'Chưa cấp phát'), ('I', 'Đã cấp phát'), ('A', 'Đã kích hoạt'), ('B', 'Bị khóa')], max_length=1, null=True, verbose_name='Trạng thái trước khị bị ban'),
+            model_name="user",
+            name="previous_status",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    ("N", "Chưa cấp phát"),
+                    ("I", "Đã cấp phát"),
+                    ("A", "Đã kích hoạt"),
+                    ("B", "Bị khóa"),
+                ],
+                max_length=1,
+                null=True,
+                verbose_name="Trạng thái trước khị bị ban",
+            ),
         ),
         migrations.AlterField(
-            model_name='user',
-            name='status',
-            field=models.CharField(choices=[('N', 'Chưa cấp phát'), ('I', 'Đã cấp phát'), ('A', 'Đã kích hoạt'), ('B', 'Bị khóa')], default='N', max_length=1, verbose_name='Trạng thái'),
+            model_name="user",
+            name="status",
+            field=models.CharField(
+                choices=[
+                    ("N", "Chưa cấp phát"),
+                    ("I", "Đã cấp phát"),
+                    ("A", "Đã kích hoạt"),
+                    ("B", "Bị khóa"),
+                ],
+                default="N",
+                max_length=1,
+                verbose_name="Trạng thái",
+            ),
         ),
     ]
