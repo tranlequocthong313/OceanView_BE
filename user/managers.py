@@ -29,4 +29,5 @@ class CustomUserWithForeignKeyManager(BaseUserManager):
         user.set_password(password)
         user.issue()
         user.save()
+
         return user

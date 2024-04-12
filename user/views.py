@@ -68,10 +68,7 @@ class UserView(ViewSet, GenericAPIView):
                 user = serializer.save()
                 return Response(UserSerializer(user).data)
             else:
-                log.error("Not provide enough data for active user")
-                return Response(
-                    serializer.error_messages, status=status.HTTP_400_BAD_REQUEST
-                )
+                return http.respond_serializer_error(serializer)
         except ObjectDoesNotExist:
             log.error("User does not exist for active user")
             return Response(
@@ -105,10 +102,10 @@ class UserView(ViewSet, GenericAPIView):
     def login(self, request):
         serializer = self.serializer_class(data=request.data)
         if not serializer.is_valid():
-            log.error("User login without resident id or password")
+            log.error(http.extract_error_messages(serializer))
             return Response(
-                {"message": "Resident ID and Password must not be empty"},
-                status=status.HTTP_400_BAD_REQUEST,
+                {"message": "Reisent ID or password is invalid"},
+                status.HTTP_400_BAD_REQUEST,
             )
 
         payload = {
@@ -118,7 +115,7 @@ class UserView(ViewSet, GenericAPIView):
             "client_secret": settings.CLIENT_SECRET,
         }
 
-        r = requests.post(url="http://localhost:8000/o/token/", data=payload)
+        r = requests.post(url=f"{settings.HOST}/o/token/", data=payload)
 
         if r.status_code == status.HTTP_200_OK:
             user = self.get_queryset().get(pk=serializer.validated_data["username"])

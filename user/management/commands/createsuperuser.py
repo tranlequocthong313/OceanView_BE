@@ -1,3 +1,4 @@
+import getpass
 import logging
 import traceback
 
@@ -5,6 +6,8 @@ import colorama
 from colorama import Fore
 from django.contrib.auth import get_user_model
 from django.contrib.auth.management.commands import createsuperuser
+from django.contrib.auth.password_validation import validate_password
+from django.core import exceptions
 
 from user.models import PersonalInformation
 
@@ -21,7 +24,6 @@ class Command(createsuperuser.Command):
         full_name = input("Full Name: ")
         phone_number = input("Phone Number: ")
         email = input("Email: ")
-        hometown = input("Hometown (optional): ") or None
         gender = input("Gender (M/F): ")
 
         personal_info = PersonalInformation.objects.create(
@@ -29,7 +31,6 @@ class Command(createsuperuser.Command):
             full_name=full_name,
             phone_number=phone_number,
             email=email,
-            hometown=hometown,
             gender=(gender.upper() if gender in ["m", "f"] else "M"),
         )
 
@@ -39,12 +40,31 @@ class Command(createsuperuser.Command):
             log.error(traceback.format_exc())
             return
 
-        options["personal_information_id"] = personal_info.citizen_id
-        options["resident_id"] = resident_id
+        fake_user_data = {}
+        fake_user_data["personal_information_id"] = personal_info.citizen_id
+        fake_user_data["resident_id"] = resident_id
 
         print(Fore.GREEN + f"This is your Resident ID: {resident_id}")
 
-        super().handle(
-            *args,
-            **options,
-        )
+        while "password" not in fake_user_data:
+            password = getpass.getpass()
+            password2 = getpass.getpass("Password (again): ")
+            if password != password2:
+                self.stderr.write("Error: Your passwords didn't match.")
+                # Don't validate passwords that don't match.
+                continue
+            if password.strip() == "":
+                self.stderr.write("Error: Blank passwords aren't allowed.")
+                # Don't validate blank passwords.
+                continue
+            try:
+                validate_password(password2, self.UserModel(**fake_user_data))
+            except exceptions.ValidationError as err:
+                self.stderr.write("\n".join(err.messages))
+                continue
+            except Exception as err:
+                log.error(traceback.format_exc())
+                raise Exception(err)
+            fake_user_data["password"] = password
+
+        super().handle(*args, **{**options, **fake_user_data})
