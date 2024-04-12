@@ -278,3 +278,5 @@ SPECTACULAR_SETTINGS = {
     "SWAGGER_UI_FAVICON_HREF": "SIDECAR",
     "REDOC_DIST": "SIDECAR",
 }
+
+HOST = os.environ.get("HOST", "http://localhost:8000")

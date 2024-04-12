@@ -1,6 +1,7 @@
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
 from django.forms import IntegerField
+from rest_framework.fields import empty
 from rest_framework.serializers import (
     CharField,
     ImageField,
@@ -76,7 +77,7 @@ class LogonUserSerializer(UserSerializer):
 
 
 class ActiveUserSerializer(ModelSerializer):
-    avatar = ImageField()
+    avatar = ImageField(required=True)
     password = CharField(write_only=True, required=True, validators=[validate_password])
 
     class Meta:
