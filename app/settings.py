@@ -42,14 +42,7 @@ SECRET_KEY = os.environ.get("SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = is_development_env()
 
-ALLOWED_HOSTS = [
-    "0.0.0.0",
-    "192.168.0.8",
-    "192.168.1.176",
-    "localhost",
-    "127.0.0.1",
-    "tranlequocthong313.pythonanywhere.com",
-]
+ALLOWED_HOSTS = ["*"]
 
 
 # Application definition
@@ -279,4 +272,4 @@ SPECTACULAR_SETTINGS = {
     "REDOC_DIST": "SIDECAR",
 }
 
-HOST = os.environ.get("HOST", "http://localhost:8000")
+HOST = os.environ.get("HOST", "http://0.0.0.0:8000")
