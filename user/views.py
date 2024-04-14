@@ -209,7 +209,7 @@ class UserView(ViewSet, GenericAPIView):
                         template="account/email/forgot_password",
                         recipient_list=[user.personal_information.email],
                         user=user,
-                        token=reset_password_token,
+                        link=f"{settings.HOST}/users/reset-password/?token={reset_password_token}",
                     )
                 log.info(f"Sent reset password link")
                 return Response(
@@ -378,7 +378,9 @@ class UserView(ViewSet, GenericAPIView):
         return TemplateResponse(
             request,
             "account/reset_password.html",
-            {"token": reset_password_token},
+            {
+                "link": f"{settings.HOST}/users/reset-password/?token={reset_password_token}"
+            },
         )
 
     def post_reset_password(self, request):
