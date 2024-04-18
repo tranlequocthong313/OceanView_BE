@@ -6,23 +6,15 @@ services:
     volumes:
       - mysql:/var/lib/mysql
     env_file:
-      - ./.env.container
-  redis:
-    image: redis:latest
-    volumes:
-      - redis:/data
-    env_file:
-      - ./.env.container
+      - ./.env.production
   api:
     build: .
     ports:
       - 8000:8000
     depends_on:
       - mysql
-      - redis
     env_file:
-      - ./.env.container
+      - ./.env.production
 
 volumes:
   mysql: {}
-  redis: {}
