@@ -4,6 +4,7 @@ from django.forms import IntegerField
 from rest_framework.fields import empty
 from rest_framework.serializers import (
     CharField,
+    EmailField,
     ImageField,
     ListField,
     ModelSerializer,
@@ -11,11 +12,16 @@ from rest_framework.serializers import (
     SerializerMethodField,
     ValidationError,
 )
+from rest_framework.validators import UniqueValidator
 
 from .models import PersonalInformation
 
 
 class PersonalInformationSerializer(ModelSerializer):
+    citizen_id = CharField()
+    email = EmailField()
+    phone_number = CharField()
+
     def to_representation(self, instance):
         rep = super().to_representation(instance)
         rep["gender"] = instance.get_gender_label()
@@ -25,10 +31,17 @@ class PersonalInformationSerializer(ModelSerializer):
     class Meta:
         model = PersonalInformation
         fields = "__all__"
-
-    def validate(self, attrs):
-        print("PERSONAL")
-        return super().validate(attrs)
+        extra_kwargs = {
+            "email": {
+                "validators": [],
+            },
+            "phone_number": {
+                "validators": [],
+            },
+            "citizen_id": {
+                "validators": [],
+            },
+        }
 
 
 class UserSerializer(ModelSerializer):
@@ -72,7 +85,7 @@ class LogonUserSerializer(UserSerializer):
         model = UserSerializer.Meta.model
         fields = UserSerializer.Meta.fields + ("token",)
 
-
+        
 class ActiveUserSerializer(Serializer):
     avatar = ImageField()
     password = CharField(write_only=True, validators=[validate_password])
