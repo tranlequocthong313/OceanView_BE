@@ -46,6 +46,10 @@ class PersonalInformation(MyBaseModel):
         _("Giới tính"), max_length=1, choices=Gender, default=Gender.MALE
     )
 
+    class Meta:
+        verbose_name = _("Thông tin cá nhân")
+        verbose_name_plural = _("Thông tin cá nhân")
+
     def has_account(self):
         return hasattr(self, "user") and self.user is not None
 
@@ -105,6 +109,10 @@ class User(AbstractBaseUser, PermissionsMixin):
     USERNAME_FIELD = "resident_id"
     objects = CustomUserWithForeignKeyManager()
     REQUIRED_FIELDS = ["personal_information_id"]
+
+    class Meta:
+        verbose_name = _("Người dùng")
+        verbose_name_plural = _("Người dùng")
 
     @classmethod
     def __generate_resident_id(cls, year, unique_number):

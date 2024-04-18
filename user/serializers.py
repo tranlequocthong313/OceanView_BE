@@ -16,47 +16,44 @@ from .models import PersonalInformation
 
 
 class PersonalInformationSerializer(ModelSerializer):
-    gender = SerializerMethodField()
+    def to_representation(self, instance):
+        rep = super().to_representation(instance)
+        rep["gender"] = instance.get_gender_label()
 
-    def get_gender(self, personal_information):
-        return personal_information.get_gender_label()
+        return rep
 
     class Meta:
         model = PersonalInformation
-        fields = [
-            "citizen_id",
-            "full_name",
-            "date_of_birth",
-            "phone_number",
-            "email",
-            "hometown",
-            "gender",
-        ]
+        fields = "__all__"
+
+    def validate(self, attrs):
+        print("PERSONAL")
+        return super().validate(attrs)
 
 
 class UserSerializer(ModelSerializer):
-    avatar = SerializerMethodField()
-    status = SerializerMethodField()
-    personal_information = PersonalInformationSerializer()
+    personal_information = PersonalInformationSerializer(read_only=True)
 
-    def get_avatar(self, user):
-        return user.avatar.url if user.avatar else None
+    def to_representation(self, instance):
+        rep = super().to_representation(instance)
+        rep["avatar"] = instance.avatar.url if instance.avatar else None
+        rep["status"] = instance.get_status_label()
 
-    def get_status(self, user):
-        return user.get_status_label()
+        return rep
 
     class Meta:
         model = get_user_model()
-        fields = [
-            "resident_id",
+        fields = (
             "personal_information",
             "password",
             "avatar",
+            "resident_id",
             "is_staff",
             "is_superuser",
             "status",
             "issued_by",
-        ]
+        )
+        read_only_fields = []
         extra_kwargs = {"password": {"write_only": "true"}}
 
 
@@ -73,19 +70,12 @@ class LogonUserSerializer(UserSerializer):
 
     class Meta:
         model = UserSerializer.Meta.model
-        fields = UserSerializer.Meta.fields + ["token"]
+        fields = UserSerializer.Meta.fields + ("token",)
 
 
-class ActiveUserSerializer(ModelSerializer):
-    avatar = ImageField(required=True)
-    password = CharField(write_only=True, required=True, validators=[validate_password])
-
-    class Meta:
-        model = get_user_model()
-        fields = (
-            "avatar",
-            "password",
-        )
+class ActiveUserSerializer(Serializer):
+    avatar = ImageField()
+    password = CharField(write_only=True, validators=[validate_password])
 
     def update(self, instance, validated_data):
         instance.avatar = validated_data["avatar"]
@@ -97,38 +87,29 @@ class ActiveUserSerializer(ModelSerializer):
 
 
 class LoginSerializer(Serializer):
-    username = CharField(required=True)
-    password = CharField(write_only=True, required=True, validators=[validate_password])
-
-
-class ForgotPasswordSerializer(Serializer):
-    resident_id = CharField(required=True)
+    username = CharField()
+    password = CharField(write_only=True, validators=[validate_password])
 
 
 class ResetPasswordMethodSerializer(Serializer):
-    methods = ListField(required=True)
+    methods = ListField()
 
 
 class TokenResetPasswordSerializer(Serializer):
-    token = CharField(required=True)
-
-
-class SendOTPSerializer(Serializer):
-    resident_id = CharField(required=True)
-    method = CharField(required=True)
+    token = CharField()
 
 
 class VerifyOTPSerializer(Serializer):
-    resident_id = CharField(required=True)
-    otp = CharField(required=True)
+    resident_id = CharField()
+    otp = CharField()
 
 
 class ResetPasswordSerializer(Serializer):
-    password = CharField(required=True, validators=[validate_password])
-    confirm_password = CharField(required=True, validators=[validate_password])
+    password = CharField(validators=[validate_password])
+    confirm_password = CharField(validators=[validate_password])
 
     def validate(self, attrs):
         if attrs["password"] != attrs["confirm_password"]:
             raise ValidationError({"password": "Password fields didn't match."})
 
-        return attrs
+        return super().validate(attrs)

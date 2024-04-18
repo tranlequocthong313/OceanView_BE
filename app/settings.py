@@ -10,20 +10,19 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.2/ref/settings/
 """
 
-from dotenv import load_dotenv
-
-load_dotenv()
-
 import os
 from pathlib import Path
 
 import cloudinary
 import pymysql
+from dotenv import load_dotenv
 
 pymysql.install_as_MySQLdb()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+load_dotenv(os.path.join(BASE_DIR, ".env"))
 
 
 ENVIRONMENT = os.environ.get("ENVIRONMENT", default="development")

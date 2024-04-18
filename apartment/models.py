@@ -26,6 +26,10 @@ class ApartmentBuilding(MyBaseModel):
     )
     built_date = DateField(_("Năm xây dựng"))
 
+    class Meta:
+        verbose_name = _("Chung cư")
+        verbose_name_plural = _("Chung cư")
+
     def __str__(self) -> str:
         return self.name
 
@@ -38,6 +42,10 @@ class Building(MyBaseModel):
     apartment_building = ForeignKey(
         verbose_name=_("Chung cư"), to=ApartmentBuilding, on_delete=CASCADE
     )
+
+    class Meta:
+        verbose_name = _("Tòa nhà")
+        verbose_name_plural = _("Tòa nhà")
 
     def __str__(self) -> str:
         return self.name
@@ -59,6 +67,10 @@ class ApartmentType(MyBaseModel):
     number_of_restroom = SmallIntegerField(
         _("Số nhà tắm"), validators=[MinValueValidator(0)]
     )
+
+    class Meta:
+        verbose_name = _("Loại căn hộ")
+        verbose_name_plural = _("Loại căn hộ")
 
     def __str__(self) -> str:
         return self.name
@@ -82,6 +94,10 @@ class Apartment(MyBaseModel):
     status = CharField(
         _("Trạng thái"), max_length=1, choices=Status, default=Status.EMPTY
     )
+
+    class Meta:
+        verbose_name = _("Căn hộ")
+        verbose_name_plural = _("Căn hộ")
 
     def save(self, *args, **kwargs):
         if self.floor > self.building.number_of_floors:
