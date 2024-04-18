@@ -18,5 +18,5 @@ python manage.py makemigrations
 python manage.py migrate
 python manage.py createcachetable
 python manage.py createdefaultdata
-python -m gunicorn app.asgi:application -k uvicorn.workers.UvicornWorker
+#python -m gunicorn app.asgi:application -k uvicorn.workers.UvicornWorker
 
