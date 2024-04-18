@@ -25,6 +25,8 @@ from .admin import admin_site
 
 urlpatterns = [
     path("", include("user.urls")),
+    # path("services/", include("service.urls")),
+    path("invoices/", include("invoice.urls")),
     path("admin/", admin_site.urls),
     path("o/", include("oauth2_provider.urls", namespace="oauth2_provider")),
     path("accounts/login/", LoginView.as_view(template_name="admin/login.html")),
