@@ -85,7 +85,7 @@ class LogonUserSerializer(UserSerializer):
         model = UserSerializer.Meta.model
         fields = UserSerializer.Meta.fields + ("token",)
 
-
+        
 class ActiveUserSerializer(Serializer):
     avatar = ImageField()
     password = CharField(write_only=True, validators=[validate_password])
