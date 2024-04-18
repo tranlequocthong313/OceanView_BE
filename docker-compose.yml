@@ -1,4 +1,4 @@
-version: '3.9'
+version: '3.8'
 
 services:
   mysql:
@@ -9,6 +9,7 @@ services:
       - ./.env.production
   api:
     build: .
+    image: tranlequocthong/api:latest
     ports:
       - 8000:8000
     depends_on:
