@@ -13,9 +13,10 @@ fi
 # python manage.py flush --no-input
 
 echo "Appling database migrations..."
+python manage.py collectstatic --no-input
 python manage.py makemigrations 
 python manage.py migrate
 python manage.py createcachetable
 python manage.py createdefaultdata
-python manage.py runserver 0.0.0.0:8000
+python -m gunicorn app.asgi:application -k uvicorn.workers.UvicornWorker
 
