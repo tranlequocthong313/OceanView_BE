@@ -4,6 +4,7 @@ from smtplib import SMTPAuthenticationError, SMTPException
 
 from django.contrib import admin, messages
 from django.contrib.auth import get_user_model
+from django.db import transaction
 from django.http import HttpResponseRedirect
 from django.utils.html import mark_safe
 
@@ -115,6 +116,7 @@ class PersonalInformationAdmin(MyBaseModelAdmin):
         if obj.user:
             return obj.user.get_status_display()
 
+    @transaction.atomic
     def issue_account(self, request, personal_information):
         if personal_information.is_issued() is False:
             user = None

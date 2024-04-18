@@ -8,6 +8,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.management.commands import createsuperuser
 from django.contrib.auth.password_validation import validate_password
 from django.core import exceptions
+from django.db import transaction
 
 from user.models import PersonalInformation
 
@@ -15,10 +16,10 @@ log = logging.getLogger(__name__)
 colorama.init(autoreset=True)
 
 
-# TODO: Create transaction for rollback data when errors occur
 class Command(createsuperuser.Command):
     help = "Create a superuser with custom fields"
 
+    @transaction.atomic
     def handle(self, *args, **options):
         citizen_id = input("Citizen ID: ")
         full_name = input("Full Name: ")
@@ -26,7 +27,7 @@ class Command(createsuperuser.Command):
         email = input("Email: ")
         gender = input("Gender (M/F): ")
 
-        personal_info = PersonalInformation.objects.create(
+        personal_info = PersonalInformation(
             citizen_id=citizen_id,
             full_name=full_name,
             phone_number=phone_number,
@@ -63,8 +64,10 @@ class Command(createsuperuser.Command):
                 self.stderr.write("\n".join(err.messages))
                 continue
             except Exception as err:
-                log.error(traceback.format_exc())
+                self.stderr.write("\n".join(err.messages))
                 raise Exception(err)
             fake_user_data["password"] = password
+
+        personal_info.save()
 
         super().handle(*args, **{**options, **fake_user_data})

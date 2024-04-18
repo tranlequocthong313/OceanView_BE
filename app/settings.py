@@ -10,21 +10,20 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.2/ref/settings/
 """
 
-from dotenv import load_dotenv
-
-load_dotenv()
-
 import os
 from pathlib import Path
 
 import cloudinary
 import pymysql
+from dotenv import load_dotenv
 
 pymysql.install_as_MySQLdb()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# load_dotenv(os.path.join(BASE_DIR, ".env"))
+load_dotenv()
 
 ENVIRONMENT = os.environ.get("ENVIRONMENT", default="development")
 
@@ -112,6 +111,8 @@ DATABASES = {
     }
 }
 
+print(DATABASES["default"]["HOST"])
+
 # Password validation
 # https://docs.djangoproject.com/en/3.2/ref/settings/#auth-password-validators
 
@@ -177,6 +178,8 @@ REST_FRAMEWORK = {
 
 CLIENT_ID = os.environ.get("CLIENT_ID")
 CLIENT_SECRET = os.environ.get("CLIENT_SECRET")
+CLIENT_TYPE = os.environ.get("CLIENT_TYPE")
+GRANT_TYPE = os.environ.get("GRANT_TYPE")
 
 CORS_ALLOW_ALL_ORIGINS = is_development_env()
 
@@ -248,8 +251,12 @@ DEFAULT_FROM_EMAIL = f"{COMPANY_NAME} <{os.environ.get('EMAIL_HOST_USER')}>"
 # change the host platform
 CACHES = {
     "default": {
-        "BACKEND": "django.core.cache.backends.db.DatabaseCache",
-        "LOCATION": "cache",
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": os.environ.get("REDIS_URL"),
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            "CONNECTION_POOL_KWARGS": {"max_connections": 100},
+        },
     }
 }
 
@@ -273,3 +280,13 @@ SPECTACULAR_SETTINGS = {
 }
 
 HOST = os.environ.get("HOST", "http://0.0.0.0:8000")
+
+ADMIN_INFO = {
+    "personal_information": {
+        "citizen_id": os.environ.get("ADMIN_CITIZEN_ID"),
+        "full_name": os.environ.get("ADMIN_FULL_NAME"),
+        "phone_number": os.environ.get("ADMIN_PHONE_NUMBER"),
+        "email": os.environ.get("ADMIN_EMAIL"),
+    },
+    "password": os.environ.get("ADMIN_PASSWORD"),
+}
