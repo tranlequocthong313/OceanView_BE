@@ -19,14 +19,12 @@ from app import settings
 from user.models import User
 from utils import email, sms, token
 
+from . import swaggers
 from .permissions import IsOwner
 from .serializers import (
     ActiveUserSerializer,
     LoginSerializer,
-    LogonUserSerializer,
-    ResetPasswordMethodSerializer,
     ResetPasswordSerializer,
-    TokenResetPasswordSerializer,
     UserSerializer,
     VerifyOTPSerializer,
 )
@@ -41,10 +39,7 @@ class UserView(ViewSet, GenericAPIView):
     def get_queryset(self):
         return User.objects.all()
 
-    @extend_schema(
-        request=ActiveUserSerializer,
-        responses={200: ActiveUserSerializer},
-    )
+    @extend_schema(**swaggers.USER_ACTIVE)
     @action(
         methods=["patch"],
         url_path="active",
@@ -57,7 +52,7 @@ class UserView(ViewSet, GenericAPIView):
             self.check_object_permissions(request=request, obj=request.user)
             if request.user.is_active_user:
                 return Response(
-                    {"message": "User has already actived"},
+                    "User has already actived",
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
@@ -67,14 +62,9 @@ class UserView(ViewSet, GenericAPIView):
             return Response(UserSerializer(user).data)
         except ObjectDoesNotExist:
             log.error("User does not exist for active user")
-            return Response(
-                {"message": "User does not exist"}, status=status.HTTP_404_NOT_FOUND
-            )
+            return Response("User does not exist", status=status.HTTP_404_NOT_FOUND)
 
-    @extend_schema(
-        request=None,
-        responses={200: UserSerializer},
-    )
+    @extend_schema(**swaggers.USER_CURRENT)
     @action(
         methods=["get"],
         url_path="current",
@@ -84,10 +74,7 @@ class UserView(ViewSet, GenericAPIView):
     def current_user(self, request):
         return Response(self.serializer_class(request.user).data)
 
-    @extend_schema(
-        request=LoginSerializer,
-        responses={200: LogonUserSerializer},
-    )
+    @extend_schema(**swaggers.USER_LOGIN)
     @action(
         methods=["post"],
         url_path="login",
@@ -120,16 +107,11 @@ class UserView(ViewSet, GenericAPIView):
             )
         elif r.status_code == status.HTTP_401_UNAUTHORIZED:
             log.error("User login failed")
-            return Response(
-                {"message": "Resident ID or Password is wrong"}, r.status_code
-            )
+            return Response("Resident ID or Password is wrong", r.status_code)
         else:
             return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-    @extend_schema(
-        request=None,
-        responses={200: ResetPasswordMethodSerializer},
-    )
+    @extend_schema(**swaggers.USER_FORGOT_PASSWORD)
     @action(
         methods=["get"],
         url_path="forgot-password",
@@ -152,14 +134,11 @@ class UserView(ViewSet, GenericAPIView):
         except ObjectDoesNotExist:
             log.error(f"User does not exist for reset password")
             return Response(
-                {"message": "User does not exist"},
+                "User does not exist",
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-    @extend_schema(
-        request=None,
-        responses=None,
-    )
+    @extend_schema(**swaggers.USER_SEND_RESET_PASSWORD_LINK)
     @action(
         methods=["post"],
         url_path="send-reset-password-link",
@@ -173,7 +152,7 @@ class UserView(ViewSet, GenericAPIView):
             if user.personal_information.email is None:
                 log.error(f"User are not allowed for using this method")
                 return Response(
-                    {"message": "User cannot use this method"},
+                    "User cannot use this method",
                     status=status.HTTP_405_METHOD_NOT_ALLOWED,
                 )
             else:
@@ -192,26 +171,23 @@ class UserView(ViewSet, GenericAPIView):
                 )
             log.info(f"Sent reset password link")
             return Response(
-                {"message": "Sent reset password link"},
+                "Sent reset password link",
                 status=status.HTTP_200_OK,
             )
         except ObjectDoesNotExist:
             log.error(f"User does not exist for sending reset password link")
             return Response(
-                {"message": "User does not exist"},
+                "User does not exist",
                 status=status.HTTP_404_NOT_FOUND,
             )
         except Exception:
             log.error(traceback.format_exc())
             return Response(
-                {"message": "Something went wrong"},
+                "Something went wrong",
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
-    @extend_schema(
-        request=None,
-        responses=None,
-    )
+    @extend_schema(**swaggers.USER_SEND_OTP)
     @action(
         methods=["post"],
         url_path="send-otp",
@@ -228,26 +204,23 @@ class UserView(ViewSet, GenericAPIView):
 
             log.info(f"Sent reset password otp")
             return Response(
-                {"message": "Sent reset password otp"},
+                "Sent reset password otp",
                 status=status.HTTP_200_OK,
             )
         except ObjectDoesNotExist:
             log.error(f"User does not exist for sending otp")
             return Response(
-                {"message": "User does not exist"},
+                "User does not exist",
                 status=status.HTTP_404_NOT_FOUND,
             )
         except Exception:
             log.error(traceback.format_exc())
             return Response(
-                {"message": "Something went wrong"},
+                "Something went wrong",
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
-    @extend_schema(
-        request=VerifyOTPSerializer,
-        responses={200: TokenResetPasswordSerializer},
-    )
+    @extend_schema(**swaggers.USER_VERIFY_OTP)
     @action(
         methods=["post"],
         url_path="verify-otp",
@@ -284,13 +257,13 @@ class UserView(ViewSet, GenericAPIView):
             )
         except ObjectDoesNotExist:
             return Response(
-                {"message": "User does not exist"},
+                "User does not exist",
                 status=status.HTTP_404_NOT_FOUND,
             )
         except Exception:
             log.error(traceback.format_exc())
             return Response(
-                {"message": "Something went wrong"},
+                "Something went wrong",
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
@@ -319,8 +292,8 @@ class UserView(ViewSet, GenericAPIView):
 
         return True, payload
 
-    @extend_schema(request=None, responses=None, methods=["GET"])
-    @extend_schema(request=ResetPasswordSerializer, responses=None, methods=["POST"])
+    @extend_schema(**swaggers.USER_RESET_PASSWORD_GET)
+    @extend_schema(**swaggers.USER_RESET_PASSWORD_POST)
     @action(
         methods=["get", "post"],
         detail=False,
@@ -372,7 +345,7 @@ class UserView(ViewSet, GenericAPIView):
         cache.delete(f"{resident_id}")
         self.send_reset_password_confirm_mail(user)
         log.info(f"Reset password successfully")
-        return Response(status=status.HTTP_200_OK)
+        return Response("Reset password successfully", status=status.HTTP_200_OK)
 
     def send_reset_password_confirm_mail(self, user):
         if user.personal_information.email is not None:

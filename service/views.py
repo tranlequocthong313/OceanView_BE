@@ -10,6 +10,7 @@ from rest_framework.viewsets import ViewSet
 from user.models import PersonalInformation
 from utils import get_logger
 
+from . import swaggers
 from .models import Relative, Service, ServiceRegistration, VehicleInformation
 from .serializers import (
     AccessCardServiceRegistrationSerializer,
@@ -39,10 +40,7 @@ class ServiceRegistrationView(ViewSet):
             service_id=service_id, personal_information__citizen_id=citizen_id
         ).exists()
 
-    @extend_schema(
-        request=AccessCardServiceRegistrationSerializer,
-        responses={200: AccessCardServiceRegistrationSerializer},
-    )
+    @extend_schema(**swaggers.SERVICE_ACCESS_CARD)
     @action(
         methods=["post"],
         url_path="access-cards",
@@ -105,10 +103,7 @@ class ServiceRegistrationView(ViewSet):
         else:
             return True
 
-    @extend_schema(
-        request=ParkingCardServiceRegistrationSerializer,
-        responses={200: ParkingCardServiceRegistrationSerializer},
-    )
+    @extend_schema(**swaggers.SERVICE_PARKING_CARD)
     @action(
         methods=["post"],
         url_path="parking-cards",

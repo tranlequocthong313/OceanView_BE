@@ -31,10 +31,10 @@ urlpatterns = [
     path("o/", include("oauth2_provider.urls", namespace="oauth2_provider")),
     path("accounts/login/", LoginView.as_view(template_name="admin/login.html")),
     path("accounts/logout/", LogoutView.as_view()),
-    path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
     path(
-        "api/schema/swagger-ui/",
+        "swagger/",
         SpectacularSwaggerView.as_view(url_name="schema"),
         name="swagger-ui",
     ),
+    path("swagger/download/", SpectacularAPIView.as_view(), name="schema"),
 ]
