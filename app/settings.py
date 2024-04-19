@@ -227,18 +227,6 @@ LOGGING["formatters"]["colored"] = {
 LOGGING["handlers"]["console"]["level"] = "DEBUG"
 LOGGING["handlers"]["console"]["formatter"] = "colored"
 
-SWAGGER_SETTINGS = {
-    "USE_SESSION_AUTH": True,
-    "SECURITY_DEFINITIONS": {
-        "OceanView API - Swagger": {
-            "type": "oauth2",
-            "tokenUrl": "/o/token/",
-            "flow": "password",
-        }
-    },
-    "OAUTH2_CONFIG": {"clientId": CLIENT_ID, "appName": COMPANY_NAME},
-}
-
 TWILIO_SID = os.environ.get("TWILIO_SID")
 TWILIO_TOKEN = os.environ.get("TWILIO_TOKEN")
 TWILIO_NUMBER = os.environ.get("TWILIO_NUMBER")

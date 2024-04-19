@@ -103,7 +103,7 @@ class LoginSerializer(Serializer):
     password = CharField(write_only=True, validators=[validate_password])
 
 
-class ResetPasswordMethodSerializer(Serializer):
+class MethodForResetPasswordSerializer(Serializer):
     methods = ListField()
 
 
