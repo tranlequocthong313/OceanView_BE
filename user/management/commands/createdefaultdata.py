@@ -46,11 +46,31 @@ class Command(BaseCommand):
 
         Service.objects.bulk_create(
             [
-                Service(service_id="001", name="Thẻ ra vào", price=55000),
-                Service(service_id="002", name="Thẻ cư dân", price=55000),
-                Service(service_id="003", name="Thẻ gửi xe đạp", price=70000),
-                Service(service_id="004", name="Thẻ gửi xe máy", price=200000),
-                Service(service_id="005", name="Thẻ gửi xe ô tô", price=1500000),
+                Service(
+                    service_id=Service.ServiceType.ACCESS_CARD,
+                    name="Thẻ ra vào",
+                    price=55000,
+                ),
+                Service(
+                    service_id=Service.ServiceType.RESIDENT_CARD,
+                    name="Thẻ cư dân",
+                    price=55000,
+                ),
+                Service(
+                    service_id=Service.ServiceType.BYCYCLE_PARKING_CARD,
+                    name="Thẻ gửi xe đạp",
+                    price=70000,
+                ),
+                Service(
+                    service_id=Service.ServiceType.MOTOR_PARKING_CARD,
+                    name="Thẻ gửi xe máy",
+                    price=200000,
+                ),
+                Service(
+                    service_id=Service.ServiceType.CAR_PARKING_CARD,
+                    name="Thẻ gửi xe ô tô",
+                    price=1500000,
+                ),
             ],
             ignore_conflicts=True,
         )
