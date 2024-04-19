@@ -23,8 +23,8 @@ from .managers import CustomUserWithForeignKeyManager
 
 class PersonalInformation(MyBaseModel):
     class Gender(TextChoices):
-        MALE = "M", _("Nam")
-        FEMALE = "F", _("Nữ")
+        MALE = "MALE", _("Nam")
+        FEMALE = "FEMALE", _("Nữ")
 
     citizen_id = CharField(
         _("Số căn cước công dân"),
@@ -43,7 +43,7 @@ class PersonalInformation(MyBaseModel):
     email = EmailField(_("Email"), unique=True, null=True, blank=True)
     hometown = CharField(_("Quê quán"), max_length=50, null=True)
     gender = CharField(
-        _("Giới tính"), max_length=1, choices=Gender, default=Gender.MALE
+        _("Giới tính"), max_length=6, choices=Gender.choices, default=Gender.MALE
     )
 
     class Meta:
@@ -55,9 +55,6 @@ class PersonalInformation(MyBaseModel):
 
     def is_issued(self):
         return self.has_account() and self.user.is_issued
-
-    def get_gender_label(self):
-        return dict(PersonalInformation.Gender.choices)[self.gender]
 
     def is_same_person(self, data):
         return (
@@ -72,10 +69,10 @@ class PersonalInformation(MyBaseModel):
 
 class User(AbstractBaseUser, PermissionsMixin):
     class Status(TextChoices):
-        NOT_ISSUED_YET = "N", _("Chưa cấp phát")
-        ISSUED = "I", _("Đã cấp phát")
-        ACTIVE = "A", _("Đã kích hoạt")
-        BANNED = "B", _("Bị khóa")
+        NOT_ISSUED_YET = "NOT_ISSUED_YET", _("Chưa cấp phát")
+        ISSUED = "ISSUED", _("Đã cấp phát")
+        ACTIVE = "ACTIVE", _("Đã kích hoạt")
+        BANNED = "BANNED", _("Bị khóa")
 
     resident_id = CharField(
         _("Mã số cư dân"),
@@ -97,13 +94,16 @@ class User(AbstractBaseUser, PermissionsMixin):
     is_superuser = BooleanField(_("Là superuser"), default=False)
     previous_status = CharField(
         _("Trạng thái trước khị bị ban"),
-        max_length=1,
-        choices=Status,
+        max_length=15,
+        choices=Status.choices,
         null=True,
         blank=True,
     )
     status = CharField(
-        _("Trạng thái"), max_length=1, choices=Status, default=Status.NOT_ISSUED_YET
+        _("Trạng thái"),
+        max_length=15,
+        choices=Status.choices,
+        default=Status.NOT_ISSUED_YET,
     )
     issued_by = ForeignKey(
         verbose_name=_("Cấp phát bởi"),
@@ -205,9 +205,6 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def is_same_person(self, data):
         return self.personal_information.is_same_person(data)
-
-    def get_status_label(self):
-        return dict(User.Status.choices)[self.status]
 
     def __str__(self) -> str:
         return f"{self.resident_id} - {self.personal_information.full_name}"

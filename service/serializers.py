@@ -53,11 +53,6 @@ class AccessCardServiceRegistrationSerializer(serializers.ModelSerializer):
         model = ServiceRegistration
         fields = ["service", "relative", "status"]
 
-    def to_representation(self, instance):
-        representation = super().to_representation(instance)
-        representation["status"] = instance.get_status_label()
-        return representation
-
 
 class ParkingCardServiceRegistrationSerializer(AccessCardServiceRegistrationSerializer):
     vehicle_information = VehicleInformationSerializer(write_only=True)

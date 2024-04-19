@@ -32,50 +32,55 @@ class Command(BaseCommand):
             )
             self.stdout.write(self.style.SUCCESS("Created superuser"))
 
-        InvoiceType.objects.bulk_create(
-            [
-                InvoiceType(invoice_type_id="ELECTRIC", name="Điện"),
-                InvoiceType(invoice_type_id="WATER", name="Nước"),
-                InvoiceType(invoice_type_id="INTERNET", name="Internet"),
-                InvoiceType(
-                    invoice_type_id="PARKING_CARD_SERVICE", name="Dịch vụ gửi xe"
-                ),
-            ],
-            ignore_conflicts=True,
-        )
+        if InvoiceType.objects.count() == 0:
+            self.stdout.write(self.style.HTTP_INFO("Creating invoice types..."))
+            InvoiceType.objects.bulk_create(
+                [
+                    InvoiceType(name="Điện"),
+                    InvoiceType(name="Nước"),
+                    InvoiceType(name="Internet"),
+                    InvoiceType(name="Dịch vụ gửi xe"),
+                ],
+                ignore_conflicts=True,
+            )
+            self.stdout.write(self.style.SUCCESS("Created invoice types"))
 
-        Service.objects.bulk_create(
-            [
-                Service(
-                    service_id=Service.ServiceType.ACCESS_CARD,
-                    name="Thẻ ra vào",
-                    price=55000,
-                ),
-                Service(
-                    service_id=Service.ServiceType.RESIDENT_CARD,
-                    name="Thẻ cư dân",
-                    price=55000,
-                ),
-                Service(
-                    service_id=Service.ServiceType.BYCYCLE_PARKING_CARD,
-                    name="Thẻ gửi xe đạp",
-                    price=70000,
-                ),
-                Service(
-                    service_id=Service.ServiceType.MOTOR_PARKING_CARD,
-                    name="Thẻ gửi xe máy",
-                    price=200000,
-                ),
-                Service(
-                    service_id=Service.ServiceType.CAR_PARKING_CARD,
-                    name="Thẻ gửi xe ô tô",
-                    price=1500000,
-                ),
-            ],
-            ignore_conflicts=True,
-        )
+        if Service.objects.count() == 0:
+            self.stdout.write(self.style.HTTP_INFO("Creating services..."))
+            Service.objects.bulk_create(
+                [
+                    Service(
+                        service_id=Service.ServiceType.ACCESS_CARD,
+                        name="Thẻ ra vào",
+                        price=55000,
+                    ),
+                    Service(
+                        service_id=Service.ServiceType.RESIDENT_CARD,
+                        name="Thẻ cư dân",
+                        price=55000,
+                    ),
+                    Service(
+                        service_id=Service.ServiceType.BYCYCLE_PARKING_CARD,
+                        name="Thẻ gửi xe đạp",
+                        price=70000,
+                    ),
+                    Service(
+                        service_id=Service.ServiceType.MOTOR_PARKING_CARD,
+                        name="Thẻ gửi xe máy",
+                        price=200000,
+                    ),
+                    Service(
+                        service_id=Service.ServiceType.CAR_PARKING_CARD,
+                        name="Thẻ gửi xe ô tô",
+                        price=1500000,
+                    ),
+                ],
+                ignore_conflicts=True,
+            )
+            self.stdout.write(self.style.SUCCESS("Created services"))
 
         if ApartmentBuilding.objects.count() == 0:
+            self.stdout.write(self.style.HTTP_INFO("Creating apartment building..."))
             ApartmentBuilding.objects.bulk_create(
                 [
                     ApartmentBuilding(
@@ -88,71 +93,88 @@ class Command(BaseCommand):
                 ],
                 ignore_conflicts=True,
             )
+            self.stdout.write(self.style.SUCCESS("Created apartment building"))
 
-        Building.objects.bulk_create(
-            [
-                Building(
-                    name="A",
-                    number_of_floors=2,
-                    apartment_building_id=1,
-                ),
-                Building(
-                    name="B",
-                    number_of_floors=2,
-                    apartment_building_id=1,
-                ),
-            ],
-            ignore_conflicts=True,
-        )
+        if Building.objects.count() == 0:
+            self.stdout.write(self.style.HTTP_INFO("Creating buildings..."))
+            Building.objects.bulk_create(
+                [
+                    Building(
+                        name="A",
+                        number_of_floors=2,
+                        apartment_building_id=1,
+                    ),
+                    Building(
+                        name="B",
+                        number_of_floors=2,
+                        apartment_building_id=1,
+                    ),
+                ],
+                ignore_conflicts=True,
+            )
+            self.stdout.write(self.style.SUCCESS("Created buildings"))
 
-        ApartmentType.objects.bulk_create(
-            [
-                ApartmentType(
-                    name="Thường",
-                    width=10,
-                    height=20,
-                    number_of_bedroom=2,
-                    number_of_living_room=1,
-                    number_of_kitchen=1,
-                    number_of_restroom=1,
-                ),
-                ApartmentType(
-                    name="Studio",
-                    width=12,
-                    height=22,
-                    number_of_bedroom=3,
-                    number_of_living_room=1,
-                    number_of_kitchen=1,
-                    number_of_restroom=2,
-                ),
-            ],
-            ignore_conflicts=True,
-        )
+        if ApartmentType.objects.count() == 0:
+            self.stdout.write(self.style.HTTP_INFO("Creating apartment types..."))
+            ApartmentType.objects.bulk_create(
+                [
+                    ApartmentType(
+                        name="Thường",
+                        width=10,
+                        height=20,
+                        number_of_bedroom=2,
+                        number_of_living_room=1,
+                        number_of_kitchen=1,
+                        number_of_restroom=1,
+                    ),
+                    ApartmentType(
+                        name="Studio",
+                        width=12,
+                        height=22,
+                        number_of_bedroom=3,
+                        number_of_living_room=1,
+                        number_of_kitchen=1,
+                        number_of_restroom=2,
+                    ),
+                ],
+                ignore_conflicts=True,
+            )
+            self.stdout.write(self.style.SUCCESS("Created apartment types"))
 
-        import random
+        if Apartment.objects.count() == 0:
+            self.stdout.write(self.style.HTTP_INFO("Creating apartments..."))
+            import random
 
-        def init_apartments(
-            apartments, building_name, number_of_floors=2, number_of_rooms_per_floor=2
-        ):
-            for floor in range(1, number_of_floors + 1):
-                for room in range(1, number_of_rooms_per_floor + 1):
-                    apartments.append(
-                        Apartment(
-                            room_number=Apartment.generate_room_number(
-                                building_name, floor, str(room)
+            def init_apartments(
+                apartments,
+                building_name,
+                number_of_floors=2,
+                number_of_rooms_per_floor=2,
+            ):
+                for floor in range(1, number_of_floors + 1):
+                    for room in range(1, number_of_rooms_per_floor + 1):
+                        apartments.append(
+                            Apartment(
+                                room_number=Apartment.generate_room_number(
+                                    building_name, floor, str(room)
+                                ),
+                                floor=floor,
+                                apartment_type_id=random.randint(1, 2),
+                                building_id=building_name,
                             ),
-                            floor=floor,
-                            apartment_type_id=random.randint(1, 2),
-                            building_id=building_name,
-                        ),
-                    )
+                        )
 
-        apartments = []
-        init_apartments(apartments, "A")
-        init_apartments(apartments, "B")
-        Apartment.objects.bulk_create(apartments, ignore_conflicts=True)
-        if User.objects.count() == 1:
-            apartments[0].residents.add(User.objects.first())
+            apartments = []
+            init_apartments(apartments, "A")
+            init_apartments(apartments, "B")
+            Apartment.objects.bulk_create(apartments, ignore_conflicts=True)
+            self.stdout.write(self.style.SUCCESS("Created apartments"))
+            if User.objects.count() == 1:
+                self.stdout.write(
+                    self.style.HTTP_INFO("Adding resident to apartment...")
+                )
+                apartments[0].residents.add(User.objects.first())
+                self.stdout.write(self.style.SUCCESS("Added resident to apartment"))
 
         Application = get_application_model()
         if Application.objects.count() == 0:

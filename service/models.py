@@ -18,17 +18,17 @@ from user.models import PersonalInformation
 
 class Service(MyBaseModel):
     class ServiceType(TextChoices):
-        ACCESS_CARD = "001", _("Thẻ ra vào")
-        RESIDENT_CARD = "002", _("Thẻ cư dân")
-        BYCYCLE_PARKING_CARD = "003", _("Thẻ gửi xe đạp")
-        MOTOR_PARKING_CARD = "004", _("Thẻ gửi xe máy")
-        CAR_PARKING_CARD = "005", _("Thẻ gửi xe ô tô")
+        ACCESS_CARD = "ACCESS_CARD", _("Thẻ ra vào")
+        RESIDENT_CARD = "RESIDENT_CARD", _("Thẻ cư dân")
+        BYCYCLE_PARKING_CARD = "BYCYCLE_PARKING_CARD", _("Thẻ gửi xe đạp")
+        MOTOR_PARKING_CARD = "MOTOR_PARKING_CARD", _("Thẻ gửi xe máy")
+        CAR_PARKING_CARD = "CAR_PARKING_CARD", _("Thẻ gửi xe ô tô")
 
     service_id = CharField(
         verbose_name=_("Mã dịch vụ"),
         primary_key=True,
-        max_length=3,
-        choices=ServiceType,
+        max_length=30,
+        choices=ServiceType.choices,
     )
     name = CharField(verbose_name=_("Tên dịch vụ"), max_length=50)
     price = DecimalField(
@@ -67,8 +67,8 @@ class Relative(MyBaseModel):
 
 class ServiceRegistration(MyBaseModel):
     class Status(TextChoices):
-        WAITING_FOR_APPROVAL = "W", _("Chờ được xét duyệt")
-        APPROVED = "A", _("Đã được duyệt")
+        WAITING_FOR_APPROVAL = "WAITING_FOR_APPROVAL", _("Chờ được xét duyệt")
+        APPROVED = "APPROVED", _("Đã được duyệt")
 
     service = ForeignKey(
         verbose_name=_("Dịch vụ"),
@@ -85,7 +85,7 @@ class ServiceRegistration(MyBaseModel):
     )
     status = CharField(
         _("Trạng thái"),
-        max_length=1,
+        max_length=30,
         choices=Status,
         default=Status.WAITING_FOR_APPROVAL,
     )
@@ -94,18 +94,15 @@ class ServiceRegistration(MyBaseModel):
         verbose_name = _("Đăng ký dịch vụ")
         verbose_name_plural = _("Đăng ký dịch vụ")
 
-    def get_status_label(self):
-        return dict(ServiceRegistration.Status.choices)[self.status]
-
     def __str__(self) -> str:
         return f"{self.personal_information} {self.service} - {self.get_status_label()}"
 
 
 class VehicleInformation(MyBaseModel):
     class VehicleType(TextChoices):
-        BYCYCLE = "B", _("Xe đạp")
-        MOTORBIKE = "M", _("Xe máy")
-        CAR = "C", _("Xe ô tô")
+        BYCYCLE = "BYCYCLE", _("Xe đạp")
+        MOTORBIKE = "MOTORBIKE", _("Xe máy")
+        CAR = "CAR", _("Xe ô tô")
 
     license_plate = CharField(
         _("Biển số"),
@@ -115,7 +112,7 @@ class VehicleInformation(MyBaseModel):
         null=True,
         blank=True,
     )
-    vehicle_type = CharField(_("Loại phương tiện"), max_length=1, choices=VehicleType)
+    vehicle_type = CharField(_("Loại phương tiện"), max_length=20, choices=VehicleType)
     service_registration = OneToOneField(
         verbose_name=_("Dịch vụ đăng ký"), to=ServiceRegistration, on_delete=CASCADE
     )
