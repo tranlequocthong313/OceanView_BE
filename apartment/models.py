@@ -78,9 +78,9 @@ class ApartmentType(MyBaseModel):
 
 class Apartment(MyBaseModel):
     class Status(TextChoices):
-        EMPTY = "E", _("Trống")
-        INHABITED = "I", _("Có người ở")
-        ABOUT_TO_MOVE = "A", _("Sắp chuyển đi")
+        EMPTY = "EMPTY", _("Trống")
+        INHABITED = "INHABITED", _("Có người ở")
+        ABOUT_TO_MOVE = "ABOUT_TO_MOVE", _("Sắp chuyển đi")
 
     room_number = CharField(_("Số phòng"), primary_key=True, max_length=20)
     floor = SmallIntegerField(_("Tầng"), validators=[MinValueValidator(0)])
@@ -92,7 +92,7 @@ class Apartment(MyBaseModel):
         verbose_name=_("Danh sách cư dân"), to=get_user_model(), blank=True
     )
     status = CharField(
-        _("Trạng thái"), max_length=1, choices=Status, default=Status.EMPTY
+        _("Trạng thái"), max_length=20, choices=Status, default=Status.EMPTY
     )
 
     class Meta:

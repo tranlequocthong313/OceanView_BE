@@ -1,7 +1,6 @@
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
 from django.forms import IntegerField
-from rest_framework.fields import empty
 from rest_framework.serializers import (
     CharField,
     EmailField,
@@ -10,10 +9,8 @@ from rest_framework.serializers import (
     ModelSerializer,
     PrimaryKeyRelatedField,
     Serializer,
-    SerializerMethodField,
     ValidationError,
 )
-from rest_framework.validators import UniqueValidator
 
 from .models import PersonalInformation
 
@@ -25,7 +22,7 @@ class PersonalInformationSerializer(ModelSerializer):
 
     def to_representation(self, instance):
         rep = super().to_representation(instance)
-        rep["gender"] = instance.get_gender_label()
+        rep["gender"] = instance.get_gender_display()
 
         return rep
 
@@ -52,7 +49,6 @@ class UserSerializer(ModelSerializer):
     def to_representation(self, instance):
         rep = super().to_representation(instance)
         rep["avatar"] = instance.avatar.url if instance.avatar else None
-        rep["status"] = instance.get_status_label()
 
         return rep
 

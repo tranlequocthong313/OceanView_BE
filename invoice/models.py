@@ -9,6 +9,7 @@ from django.db.models import (
     DecimalField,
     ForeignKey,
     OneToOneField,
+    TextChoices,
 )
 from django.db.models.signals import pre_save
 from django.dispatch import receiver
@@ -19,15 +20,6 @@ from utils import format
 
 
 class InvoiceType(MyBaseModel):
-    INVOICE_TYPES = (
-        ("ELECTRIC", _("Điện")),
-        ("WATER", _("Nước")),
-        ("INTERNET", _("Internet")),
-        ("PARKING_CARD_SERVICE", _("Dịch vụ gửi xe")),
-    )
-    invoice_type_id = CharField(
-        _("Mã loại hóa đơn"), max_length=30, primary_key=True, choices=INVOICE_TYPES
-    )
     name = CharField(_("Tên loại hóa đơn"), max_length=50)
     description = CharField(_("Mô tả"), max_length=50, null=True, blank=True)
 
@@ -40,11 +32,10 @@ class InvoiceType(MyBaseModel):
 
 
 class Invoice(MyBaseModel):
-    PAYMENT_STATUS_CHOICES = (
-        ("PENDING", _("Chờ thanh toán")),
-        ("PAID", _("Đã thanh toán")),
-        ("OVERDUE", _("Quá hạn")),
-    )
+    class PAYMENT_STATUS_CHOICES(TextChoices):
+        PENDING = "PENDING", _("Chờ thanh toán")
+        PAID = "PAID", _("Đã thanh toán")
+        OVERDUE = "OVERDUE", _("Quá hạn")
 
     id = CharField(_("Mã hóa đơn"), max_length=10, primary_key=True)
     resident = ForeignKey(
@@ -57,7 +48,7 @@ class Invoice(MyBaseModel):
     payment_status = CharField(
         _("Trạng thái thanh toán"),
         max_length=10,
-        choices=PAYMENT_STATUS_CHOICES,
+        choices=PAYMENT_STATUS_CHOICES.choices,
         default="PENDING",
     )
     invoice_type = ForeignKey(
@@ -73,12 +64,12 @@ class Invoice(MyBaseModel):
 
 
 class InvoiceDetail(MyBaseModel):
-    PAYMENT_METHODS = (
-        ("E_WALLET", _("Ví điện tử")),
-        ("ACCREDITATIVE", _("Ủy nhiệm chi")),
-    )
+    class PAYMENT_METHODS(TextChoices):
+        E_WALLET = "E_WALLET", _("Ví điện tử")
+        ACCREDITATIVE = "ACCREDITATIVE", _("Ủy nhiệm chi")
+
     payment_method = CharField(
-        _("Phương thức thanh toán"), max_length=14, choices=PAYMENT_METHODS
+        _("Phương thức thanh toán"), max_length=15, choices=PAYMENT_METHODS.choices
     )
     transaction_code = CharField(
         _("Mã giao dịch"), max_length=49, null=True, blank=True
