@@ -11,7 +11,7 @@ class MyAdminSite(admin.AdminSite):
 
 class MyBaseModelAdmin(admin.ModelAdmin):
     list_per_page = 10
-    empty_value_display = "-empty-"
+    empty_value_display = "-- empty --"
 
 
 admin_site = MyAdminSite(name=settings.COMPANY_NAME)

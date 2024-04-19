@@ -8,6 +8,7 @@ from rest_framework.serializers import (
     ImageField,
     ListField,
     ModelSerializer,
+    PrimaryKeyRelatedField,
     Serializer,
     SerializerMethodField,
     ValidationError,
@@ -18,9 +19,9 @@ from .models import PersonalInformation
 
 
 class PersonalInformationSerializer(ModelSerializer):
-    citizen_id = CharField()
-    email = EmailField()
-    phone_number = CharField()
+    citizen_id = CharField(required=True)
+    email = EmailField(required=False, read_only=True)
+    phone_number = CharField(required=True)
 
     def to_representation(self, instance):
         rep = super().to_representation(instance)
@@ -46,6 +47,7 @@ class PersonalInformationSerializer(ModelSerializer):
 
 class UserSerializer(ModelSerializer):
     personal_information = PersonalInformationSerializer(read_only=True)
+    apartment_set = PrimaryKeyRelatedField(read_only=True, many=True)
 
     def to_representation(self, instance):
         rep = super().to_representation(instance)
@@ -57,6 +59,7 @@ class UserSerializer(ModelSerializer):
     class Meta:
         model = get_user_model()
         fields = (
+            "apartment_set",
             "personal_information",
             "password",
             "avatar",
@@ -66,7 +69,6 @@ class UserSerializer(ModelSerializer):
             "status",
             "issued_by",
         )
-        read_only_fields = []
         extra_kwargs = {"password": {"write_only": "true"}}
 
 
@@ -85,10 +87,11 @@ class LogonUserSerializer(UserSerializer):
         model = UserSerializer.Meta.model
         fields = UserSerializer.Meta.fields + ("token",)
 
-        
+
 class ActiveUserSerializer(Serializer):
     avatar = ImageField()
     password = CharField(write_only=True, validators=[validate_password])
+    status = CharField(read_only=True)
 
     def update(self, instance, validated_data):
         instance.avatar = validated_data["avatar"]

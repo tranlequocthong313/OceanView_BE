@@ -59,6 +59,13 @@ class PersonalInformation(MyBaseModel):
     def get_gender_label(self):
         return dict(PersonalInformation.Gender.choices)[self.gender]
 
+    def is_same_person(self, data):
+        return (
+            data.get("citizen_id") == self.citizen_id
+            or data.get("phone_number") == self.phone_number
+            or (self.email is not None and data.get("email") == self.email)
+        )
+
     def __str__(self) -> str:
         return f"{self.citizen_id} - {self.full_name}"
 
@@ -195,6 +202,9 @@ class User(AbstractBaseUser, PermissionsMixin):
     def change_password(self, new_password):
         self.set_password(new_password)
         self.save()
+
+    def is_same_person(self, data):
+        return self.personal_information.is_same_person(data)
 
     def get_status_label(self):
         return dict(User.Status.choices)[self.status]
