@@ -33,7 +33,7 @@ class PersonalInformation(MyBaseModel):
         primary_key=True,
     )
     full_name = CharField(_("Họ tên"), max_length=50)
-    date_of_birth = DateField(_("Ngày sinh"), null=True)
+    date_of_birth = DateField(_("Ngày sinh"), null=True, blank=True)
     phone_number = CharField(
         _("Số điện thoại"),
         max_length=11,
@@ -41,7 +41,7 @@ class PersonalInformation(MyBaseModel):
         validators=[MinLengthValidator(10)],
     )
     email = EmailField(_("Email"), unique=True, null=True, blank=True)
-    hometown = CharField(_("Quê quán"), max_length=50, null=True)
+    hometown = CharField(_("Quê quán"), max_length=50, null=True, blank=True)
     gender = CharField(
         _("Giới tính"), max_length=6, choices=Gender.choices, default=Gender.MALE
     )

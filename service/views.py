@@ -63,6 +63,11 @@ class ServiceRegistrationView(ViewSet):
             Q(citizen_id=personal_information_data["citizen_id"])
             | Q(phone_number=personal_information_data["phone_number"])
         ).first()
+        if personal_information.user is not None:
+            return Response(
+                "This person is a resident and do not need an access card",
+                status.HTTP_400_BAD_REQUEST,
+            )
 
         if personal_information is None:
             personal_information = PersonalInformation.objects.create(
