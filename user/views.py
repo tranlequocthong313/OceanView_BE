@@ -43,7 +43,7 @@ class UserView(ViewSet, GenericAPIView):
 
     @extend_schema(
         request=ActiveUserSerializer,
-        responses={200: UserSerializer},
+        responses={200: ActiveUserSerializer},
     )
     @action(
         methods=["patch"],

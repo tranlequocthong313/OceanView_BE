@@ -25,15 +25,11 @@ class Command(BaseCommand):
                 **settings.ADMIN_INFO["personal_information"],
             )
             resident_id = User.generate_resident_id()
-            user = User(
+            User.objects.create_superuser(
+                password=settings.ADMIN_INFO["password"],
                 personal_information=personal_information,
                 resident_id=resident_id,
-                is_staff=True,
-                is_superuser=True,
             )
-            user.set_password(settings.ADMIN_INFO["password"])
-            user.issue()
-            user.save()
             self.stdout.write(self.style.SUCCESS("Created superuser"))
 
         InvoiceType.objects.bulk_create(
@@ -50,10 +46,11 @@ class Command(BaseCommand):
 
         Service.objects.bulk_create(
             [
-                Service(service_id="001", name="Thẻ ra vào", price=100000),
-                Service(service_id="002", name="Thẻ gửi xe đạp", price=50000),
-                Service(service_id="003", name="Thẻ gửi xe máy", price=200000),
-                Service(service_id="004", name="Thẻ gửi xe ô tô", price=500000),
+                Service(service_id="001", name="Thẻ ra vào", price=55000),
+                Service(service_id="002", name="Thẻ cư dân", price=55000),
+                Service(service_id="003", name="Thẻ gửi xe đạp", price=70000),
+                Service(service_id="004", name="Thẻ gửi xe máy", price=200000),
+                Service(service_id="005", name="Thẻ gửi xe ô tô", price=1500000),
             ],
             ignore_conflicts=True,
         )
@@ -75,12 +72,12 @@ class Command(BaseCommand):
         Building.objects.bulk_create(
             [
                 Building(
-                    name="Tòa nhà A",
+                    name="A",
                     number_of_floors=2,
                     apartment_building_id=1,
                 ),
                 Building(
-                    name="Tòa nhà B",
+                    name="B",
                     number_of_floors=2,
                     apartment_building_id=1,
                 ),
@@ -112,59 +109,31 @@ class Command(BaseCommand):
             ignore_conflicts=True,
         )
 
-        Apartment.objects.bulk_create(
-            [
-                Apartment(
-                    room_number="1",
-                    floor=1,
-                    apartment_type_id=1,
-                    building_id=1,
-                ),
-                Apartment(
-                    room_number="2",
-                    floor=1,
-                    apartment_type_id=2,
-                    building_id=1,
-                ),
-                Apartment(
-                    room_number="1",
-                    floor=2,
-                    apartment_type_id=2,
-                    building_id=1,
-                ),
-                Apartment(
-                    room_number="2",
-                    floor=2,
-                    apartment_type_id=1,
-                    building_id=1,
-                ),
-                Apartment(
-                    room_number="1",
-                    floor=1,
-                    apartment_type_id=1,
-                    building_id=2,
-                ),
-                Apartment(
-                    room_number="2",
-                    floor=1,
-                    apartment_type_id=2,
-                    building_id=2,
-                ),
-                Apartment(
-                    room_number="1",
-                    floor=2,
-                    apartment_type_id=2,
-                    building_id=2,
-                ),
-                Apartment(
-                    room_number="2",
-                    floor=2,
-                    apartment_type_id=1,
-                    building_id=2,
-                ),
-            ],
-            ignore_conflicts=True,
-        )
+        import random
+
+        def init_apartments(
+            apartments, building_name, number_of_floors=2, number_of_rooms_per_floor=2
+        ):
+            for floor in range(1, number_of_floors + 1):
+                for room in range(1, number_of_rooms_per_floor + 1):
+                    apartments.append(
+                        Apartment(
+                            room_number=Apartment.generate_room_number(
+                                building_name, floor, str(room)
+                            ),
+                            floor=floor,
+                            apartment_type_id=random.randint(1, 2),
+                            building_id=building_name,
+                        ),
+                    )
+
+        apartments = []
+        init_apartments(apartments, "A")
+        init_apartments(apartments, "B")
+        Apartment.objects.bulk_create(apartments, ignore_conflicts=True)
+        if User.objects.count() == 1:
+            apartments[0].residents.add(User.objects.first())
+
         Application = get_application_model()
         if Application.objects.count() == 0:
             self.stdout.write(self.style.HTTP_INFO("Creating oauth2 application..."))

@@ -35,7 +35,7 @@ class ApartmentBuilding(MyBaseModel):
 
 
 class Building(MyBaseModel):
-    name = CharField(_("Tên tòa nhà"), max_length=10)
+    name = CharField(_("Tên tòa nhà"), max_length=10, primary_key=True)
     number_of_floors = SmallIntegerField(
         _("Số tầng"), validators=[MinValueValidator(0)]
     )
@@ -82,7 +82,7 @@ class Apartment(MyBaseModel):
         INHABITED = "I", _("Có người ở")
         ABOUT_TO_MOVE = "A", _("Sắp chuyển đi")
 
-    room_number = CharField(_("Số phòng"), unique=True, max_length=6)
+    room_number = CharField(_("Số phòng"), primary_key=True, max_length=20)
     floor = SmallIntegerField(_("Tầng"), validators=[MinValueValidator(0)])
     apartment_type = ForeignKey(
         verbose_name=_("Loại căn hộ"), to=ApartmentType, on_delete=SET_NULL, null=True
@@ -99,18 +99,20 @@ class Apartment(MyBaseModel):
         verbose_name = _("Căn hộ")
         verbose_name_plural = _("Căn hộ")
 
+    @classmethod
+    def generate_room_number(cls, building_name, floor, room_number):
+        # Construct room number using building name and floor
+        room_number = f"{building_name}-{floor}{int(room_number):02d}"
+        return room_number
+
     def save(self, *args, **kwargs):
         if self.floor > self.building.number_of_floors:
             raise ValueError(
                 "appartment's floor must be less than or equal the building's number of floors"
             )
-
-        if self.room_number:
-            # Construct room number using building name and floor
-            building_name = self.building.name if self.building else ""
-            room_number = f"{building_name}-{self.floor}{int(self.room_number):02d}"
-            self.room_number = room_number
-
+        self.room_number = Apartment.generate_room_number(
+            building_name=self.building, floor=self.floor, room_number=self.room_number
+        )
         super().save(*args, **kwargs)
 
     def __str__(self) -> str:

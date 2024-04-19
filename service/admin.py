@@ -51,7 +51,25 @@ class ServiceRegistrationAdmin(MyBaseModelAdmin):
     list_filter = ("status",)
 
 
+class VehicleInformationAdmin(MyBaseModelAdmin):
+    list_display = (
+        "id",
+        "license_plate",
+        "vehicle_type",
+        "apartment",
+    )
+    search_fields = (
+        "license_plate",
+        "vehicle_type",
+        "apartment__room_number",
+    )
+    list_filter = (
+        "vehicle_type",
+        "apartment__room_number",
+    )
+
+
 admin_site.register(Relative)
-admin_site.register(VehicleInformation)
+admin_site.register(VehicleInformation, VehicleInformationAdmin)
 admin_site.register(Service, ServiceAdmin)
 admin_site.register(ServiceRegistration, ServiceRegistrationAdmin)

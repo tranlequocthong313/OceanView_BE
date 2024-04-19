@@ -27,7 +27,7 @@ class Command(createsuperuser.Command):
         email = input("Email: ")
         gender = input("Gender (M/F): ")
 
-        personal_info = PersonalInformation(
+        personal_information = PersonalInformation.objects.create(
             citizen_id=citizen_id,
             full_name=full_name,
             phone_number=phone_number,
@@ -41,15 +41,16 @@ class Command(createsuperuser.Command):
             log.error(traceback.format_exc())
             return
 
-        fake_user_data = {}
-        fake_user_data["personal_information_id"] = personal_info.citizen_id
-        fake_user_data["resident_id"] = resident_id
-
         print(Fore.GREEN + f"This is your Resident ID: {resident_id}")
 
-        while "password" not in fake_user_data:
+        user_data = {}
+        user_data["personal_information"] = personal_information
+        user_data["resident_id"] = resident_id
+
+        while "password" not in user_data:
             password = getpass.getpass()
             password2 = getpass.getpass("Password (again): ")
+
             if password != password2:
                 self.stderr.write("Error: Your passwords didn't match.")
                 # Don't validate passwords that don't match.
@@ -59,15 +60,15 @@ class Command(createsuperuser.Command):
                 # Don't validate blank passwords.
                 continue
             try:
-                validate_password(password2, self.UserModel(**fake_user_data))
+                validate_password(password2, self.UserModel(**user_data))
             except exceptions.ValidationError as err:
                 self.stderr.write("\n".join(err.messages))
                 continue
             except Exception as err:
                 self.stderr.write("\n".join(err.messages))
                 raise Exception(err)
-            fake_user_data["password"] = password
+            user_data["password"] = password
 
-        personal_info.save()
+        get_user_model().objects.create_superuser(**user_data)
 
-        super().handle(*args, **{**options, **fake_user_data})
+        print(Fore.GREEN + "Created superuser successfully!")

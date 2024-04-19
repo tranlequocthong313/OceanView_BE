@@ -11,6 +11,7 @@ from django.db.models import (
 )
 from django.utils.translation import gettext_lazy as _
 
+from apartment.models import Apartment
 from app.models import MyBaseModel
 from user.models import PersonalInformation
 
@@ -18,9 +19,10 @@ from user.models import PersonalInformation
 class Service(MyBaseModel):
     class ServiceType(TextChoices):
         ACCESS_CARD = "001", _("Thẻ ra vào")
-        BYCYCLE_PARKING_CARD = "002", _("Thẻ gửi xe đạp")
-        MOTOR_PARKING_CARD = "003", _("Thẻ gửi xe máy")
-        CAR_PARKING_CARD = "004", _("Thẻ gửi xe ô tô")
+        RESIDENT_CARD = "002", _("Thẻ cư dân")
+        BYCYCLE_PARKING_CARD = "003", _("Thẻ gửi xe đạp")
+        MOTOR_PARKING_CARD = "004", _("Thẻ gửi xe máy")
+        CAR_PARKING_CARD = "005", _("Thẻ gửi xe ô tô")
 
     service_id = CharField(
         verbose_name=_("Mã dịch vụ"),
@@ -96,7 +98,7 @@ class ServiceRegistration(MyBaseModel):
         return dict(ServiceRegistration.Status.choices)[self.status]
 
     def __str__(self) -> str:
-        return f"{self.relative} - {self.get_status_label()}"
+        return f"{self.personal_information} {self.service} - {self.get_status_label()}"
 
 
 class VehicleInformation(MyBaseModel):
@@ -117,16 +119,18 @@ class VehicleInformation(MyBaseModel):
     service_registration = OneToOneField(
         verbose_name=_("Dịch vụ đăng ký"), to=ServiceRegistration, on_delete=CASCADE
     )
+    apartment = ForeignKey(verbose_name=_("Căn hộ"), to=Apartment, on_delete=CASCADE)
 
     class Meta:
         verbose_name = _("Thông tin phương tiện")
         verbose_name_plural = _("Thông tin phương tiện")
 
-    def get_vehicle_type_label(self):
-        return dict(self.VehicleType.choices)[self.vehicle_type]
+    @classmethod
+    def get_vehicle_type_label(cls, vehicle_type):
+        return dict(cls.VehicleType.choices)[vehicle_type]
 
     def __str__(self) -> str:
-        return f"{self.get_vehicle_type_label()} - {self.license_plate}"
+        return f"{self.apartment} - {VehicleInformation.get_vehicle_type_label(self.vehicle_type)} - {self.license_plate if self.license_plate else ''}"
 
     @classmethod
     def get_service_id(cls, vehicle_type):
