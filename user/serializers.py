@@ -17,13 +17,12 @@ from .models import PersonalInformation
 
 class PersonalInformationSerializer(ModelSerializer):
     citizen_id = CharField(required=True)
-    email = EmailField(required=False, read_only=True)
+    email = EmailField(read_only=True)
     phone_number = CharField(required=True)
 
     def to_representation(self, instance):
         rep = super().to_representation(instance)
         rep["gender"] = instance.get_gender_display()
-
         return rep
 
     class Meta:
