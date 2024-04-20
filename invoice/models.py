@@ -32,7 +32,7 @@ class InvoiceType(MyBaseModel):
 
 
 class Invoice(MyBaseModel):
-    class PAYMENT_STATUS(TextChoices):
+    class PaymentStatus(TextChoices):
         PENDING = "PENDING", _("Chờ thanh toán")
         PAID = "PAID", _("Đã thanh toán")
         OVERDUE = "OVERDUE", _("Quá hạn")
@@ -48,7 +48,7 @@ class Invoice(MyBaseModel):
     payment_status = CharField(
         _("Trạng thái thanh toán"),
         max_length=10,
-        choices=PAYMENT_STATUS.choices,
+        choices=PaymentStatus.choices,
         default="PENDING",
     )
     invoice_type = ForeignKey(

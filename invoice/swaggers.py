@@ -3,6 +3,7 @@ from drf_spectacular.utils import OpenApiExample, OpenApiParameter
 
 from invoice.models import Invoice
 from invoice.serializers import InvoiceSerializer
+from utils import format
 
 INVOICE_LIST = {
     "description": "Get invoices",
@@ -28,7 +29,7 @@ INVOICE_LIST = {
                 "updated_date": "2024-04-19T16:26:37.204Z",
                 "amount": "5350000",
                 "due_date": "2024-04-19",
-                "payment_status": Invoice.PAYMENT_STATUS.PENDING,
+                "payment_status": format.format_enum_values(Invoice.PaymentStatus),
                 "resident": "240269",
                 "invoice_type": 1,
             },
@@ -50,7 +51,7 @@ INVOICE_RETRIEVE = {
                 "updated_date": "2024-04-19T16:26:37.204Z",
                 "amount": "5350000",
                 "due_date": "2024-04-19",
-                "payment_status": "PENDING",
+                "payment_status": format.format_enum_values(Invoice.PaymentStatus),
                 "resident": "240269",
                 "invoice_type": 1,
             },
