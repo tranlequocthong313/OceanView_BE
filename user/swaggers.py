@@ -12,6 +12,7 @@ from user.serializers import (
     UserSerializer,
     VerifyOTPSerializer,
 )
+from utils import format
 
 user_response_example = {
     "apartment_set": ["A-101", "B-202"],
@@ -30,7 +31,7 @@ user_response_example = {
     "resident_id": "240269",
     "is_staff": False,
     "is_superuser": False,
-    "status": User.Status.ISSUED,
+    "status": format.format_enum_values(User.Status),
     "issued_by": "240001",
 }
 

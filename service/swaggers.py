@@ -5,6 +5,7 @@ from service.serializers import (
     AccessCardServiceRegistrationSerializer,
     ParkingCardServiceRegistrationSerializer,
 )
+from utils import format
 
 SERVICE_ACCESS_CARD = {
     "description": "Register access card service",
@@ -22,7 +23,7 @@ SERVICE_ACCESS_CARD = {
                         "full_name": "Nguyen Thi B",
                         "date_of_birth": "2024-04-19",
                         "hometown": "TP.HCM",
-                        "gender": "FEMALE",
+                        "gender": "Nữ",
                     },
                 }
             },
@@ -32,11 +33,11 @@ SERVICE_ACCESS_CARD = {
             "Example",
             value={
                 "service": {
-                    "service_id": Service.ServiceType.ACCESS_CARD,
+                    "service_id": format.format_enum_values(Service.ServiceType),
                     "name": "Thẻ ra vào",
                     "price": "55000",
                 },
-                "status": ServiceRegistration.Status.WAITING_FOR_APPROVAL,
+                "status": format.format_enum_values(ServiceRegistration.Status),
             },
             response_only=True,
         ),
@@ -59,13 +60,15 @@ SERVICE_PARKING_CARD = {
                         "full_name": "Nguyen Thi B",
                         "date_of_birth": "2024-04-19",
                         "hometown": "TP.HCM",
-                        "gender": "FEMALE",
+                        "gender": "Nữ",
                     },
                 },
                 "room_number": "A-303",
                 "vehicle_information": {
                     "license_plate": "30A91632",
-                    "vehicle_type": VehicleInformation.VehicleType.MOTORBIKE,
+                    "vehicle_type": format.format_enum_values(
+                        VehicleInformation.VehicleType
+                    ),
                 },
             },
             request_only=True,
@@ -74,11 +77,11 @@ SERVICE_PARKING_CARD = {
             "Example",
             value={
                 "service": {
-                    "service_id": Service.ServiceType.MOTOR_PARKING_CARD,
+                    "service_id": format.format_enum_values(Service.ServiceType),
                     "name": "Thẻ gửi xe",
                     "price": "250000",
                 },
-                "status": ServiceRegistration.Status.WAITING_FOR_APPROVAL,
+                "status": format.format_enum_values(ServiceRegistration.Status),
             },
             response_only=True,
         ),
