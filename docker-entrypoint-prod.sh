@@ -14,11 +14,11 @@ fi
 
 echo "Appling database migrations..."
 pip install -r requirements.txt
-python manage.py collectstatic --no-input
-python manage.py makemigrations 
-python manage.py migrate
-python manage.py createcachetable
-python manage.py createdefaultdata
+python3 manage.py collectstatic --no-input
+python3 manage.py makemigrations 
+python3 manage.py migrate
+python3 manage.py createcachetable
+python3 manage.py createdefaultdata
 # python -m gunicorn app.asgi:application -k uvicorn.workers.UvicornWorker
 
 

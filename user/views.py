@@ -63,6 +63,11 @@ class UserView(ViewSet, GenericAPIView):
         except ObjectDoesNotExist:
             log.error("User does not exist for active user")
             return Response("User does not exist", status=status.HTTP_404_NOT_FOUND)
+        except Exception:
+            log.error(traceback.format_exc())
+            return Response(
+                "Something went wrong :(", status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
     @extend_schema(**swaggers.USER_CURRENT)
     @action(
@@ -105,11 +110,13 @@ class UserView(ViewSet, GenericAPIView):
                 },
                 status=status.HTTP_200_OK,
             )
-        elif r.status_code == status.HTTP_401_UNAUTHORIZED:
+        elif r.status_code != status.HTTP_500_INTERNAL_SERVER_ERROR:
             log.error("User login failed")
             return Response("Resident ID or Password is wrong", r.status_code)
         else:
-            return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response(
+                "Something went wrong", status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
     @extend_schema(**swaggers.USER_FORGOT_PASSWORD)
     @action(
@@ -242,7 +249,7 @@ class UserView(ViewSet, GenericAPIView):
             )
             if verified is False:
                 log.error(f"User does not exist for sending otp")
-                return Response(status=status.HTTP_401_UNAUTHORIZED)
+                return Response("OTP is invalid", status=status.HTTP_401_UNAUTHORIZED)
 
             reset_password_token = token.generate_token(str(resident_id))
             cache.set(
