@@ -83,10 +83,16 @@ class LogonUserSerializer(UserSerializer):
         fields = UserSerializer.Meta.fields + ("token",)
 
 
-class ActiveUserSerializer(Serializer):
-    avatar = ImageField()
-    password = CharField(write_only=True, validators=[validate_password])
-    status = CharField(read_only=True)
+class ActiveUserSerializer(ModelSerializer):
+    class Meta:
+        model = get_user_model()
+        fields = ["avatar", "password", "status"]
+        read_only_fields = ["status"]
+        extra_kwargs = {
+            "password": {
+                "validators": [validate_password],
+            },
+        }
 
     def update(self, instance, validated_data):
         instance.avatar = validated_data["avatar"]
