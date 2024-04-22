@@ -4,7 +4,7 @@ from rest_framework import routers
 from .views import InvoiceView
 
 r = routers.DefaultRouter()
-r.register("", InvoiceView, basename="invoice")
+r.register("invoices", InvoiceView, basename="invoice")
 
 urlpatterns = [
     path("", include(r.urls)),

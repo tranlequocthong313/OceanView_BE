@@ -62,6 +62,7 @@ INSTALLED_APPS = [
     "invoice.apps.InvoiceConfig",
     "service.apps.ServiceConfig",
     "apartment.apps.ApartmentConfig",
+    "feedback.apps.FeedbackConfig",
 ]
 
 MIDDLEWARE = [
@@ -183,6 +184,8 @@ REST_FRAMEWORK = {
         "rest_framework.permissions.IsAuthenticated",
     ],
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.LimitOffsetPagination",
+    "PAGE_SIZE": 10,
 }
 
 CLIENT_ID = os.environ.get("CLIENT_ID")

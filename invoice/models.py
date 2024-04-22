@@ -1,27 +1,17 @@
 from cloudinary.models import CloudinaryField
 from django.contrib.auth import get_user_model
 from django.core.validators import MinValueValidator
-from django.db.models import (
-    CASCADE,
-    SET_NULL,
-    CharField,
-    DateField,
-    DecimalField,
-    ForeignKey,
-    OneToOneField,
-    TextChoices,
-)
+from django.db import models
 from django.db.models.signals import pre_save
 from django.dispatch import receiver
 from django.utils.translation import gettext_lazy as _
 
 from app.models import MyBaseModel
-from utils import format
 
 
 class InvoiceType(MyBaseModel):
-    name = CharField(_("Tên loại hóa đơn"), max_length=50)
-    description = CharField(_("Mô tả"), max_length=50, null=True, blank=True)
+    name = models.CharField(_("Tên loại hóa đơn"), max_length=50)
+    description = models.CharField(_("Mô tả"), max_length=50, null=True, blank=True)
 
     class Meta:
         verbose_name = _("Loại hóa đơn")
@@ -32,27 +22,30 @@ class InvoiceType(MyBaseModel):
 
 
 class Invoice(MyBaseModel):
-    class PaymentStatus(TextChoices):
+    class PaymentStatus(models.TextChoices):
         PENDING = "PENDING", _("Chờ thanh toán")
         PAID = "PAID", _("Đã thanh toán")
         OVERDUE = "OVERDUE", _("Quá hạn")
 
-    id = CharField(_("Mã hóa đơn"), max_length=10, primary_key=True)
-    resident = ForeignKey(
-        to=get_user_model(), verbose_name=_("Cư dân"), on_delete=CASCADE
+    id = models.CharField(_("Mã hóa đơn"), max_length=10, primary_key=True)
+    resident = models.ForeignKey(
+        to=get_user_model(), verbose_name=_("Cư dân"), on_delete=models.CASCADE
     )
-    amount = DecimalField(
+    amount = models.DecimalField(
         _("Số tiền"), max_digits=11, decimal_places=2, validators=[MinValueValidator(0)]
     )
-    due_date = DateField(_("Ngày đáo hạn"))
-    payment_status = CharField(
+    due_date = models.DateField(_("Ngày đáo hạn"))
+    payment_status = models.CharField(
         _("Trạng thái thanh toán"),
         max_length=10,
         choices=PaymentStatus.choices,
         default="PENDING",
     )
-    invoice_type = ForeignKey(
-        verbose_name=_("Loại hóa đơn"), to=InvoiceType, on_delete=SET_NULL, null=True
+    invoice_type = models.ForeignKey(
+        verbose_name=_("Loại hóa đơn"),
+        to=InvoiceType,
+        on_delete=models.SET_NULL,
+        null=True,
     )
 
     class Meta:
@@ -64,21 +57,21 @@ class Invoice(MyBaseModel):
 
 
 class InvoiceDetail(MyBaseModel):
-    class PAYMENT_METHODS(TextChoices):
+    class PAYMENT_METHODS(models.TextChoices):
         E_WALLET = "E_WALLET", _("Ví điện tử")
         ACCREDITATIVE = "ACCREDITATIVE", _("Ủy nhiệm chi")
 
-    payment_method = CharField(
+    payment_method = models.CharField(
         _("Phương thức thanh toán"), max_length=15, choices=PAYMENT_METHODS.choices
     )
-    transaction_code = CharField(
+    transaction_code = models.CharField(
         _("Mã giao dịch"), max_length=49, null=True, blank=True
     )
     payment_proof = CloudinaryField(_("Ảnh chứng từ thanh toán"), null=True, blank=True)
-    invoice = OneToOneField(
+    invoice = models.OneToOneField(
         verbose_name=_("Hóa đơn"),
         to=Invoice,
-        on_delete=CASCADE,
+        on_delete=models.CASCADE,
     )
 
     class Meta:
