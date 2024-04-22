@@ -32,4 +32,4 @@ class Feedback(models.Model):
         self.save()
 
     def __str__(self) -> str:
-        return f"{self.type} - {self.title}"
+        return f"{self.get_type_display()} - {self.title}"
