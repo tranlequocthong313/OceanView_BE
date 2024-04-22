@@ -4,8 +4,6 @@ from django.forms import IntegerField
 from rest_framework.serializers import (
     CharField,
     EmailField,
-    ImageField,
-    ListField,
     ModelSerializer,
     PrimaryKeyRelatedField,
     Serializer,
@@ -109,8 +107,37 @@ class LoginSerializer(Serializer):
     password = CharField(write_only=True, validators=[validate_password])
 
 
-class MethodForResetPasswordSerializer(Serializer):
-    methods = ListField()
+class RefreshTokenSerializer(Serializer):
+    refresh_token = CharField(required=True, write_only=True)
+
+
+class ForgotPasswordSerializer(Serializer):
+    user_identifier = CharField(write_only=True, required=True)
+
+
+class MethodForResetPasswordSerializer(ModelSerializer):
+    email = CharField(read_only=True, required=False)
+    phone_number = CharField(read_only=True, required=False)
+
+    class Meta:
+        model = PersonalInformation
+        fields = ["email", "phone_number"]
+
+
+class SendResetPasswordLinkSerializer(ModelSerializer):
+    email = EmailField(write_only=True, required=True)
+
+    class Meta:
+        model = PersonalInformation
+        fields = ["email"]
+
+
+class SendOTPSerializer(ModelSerializer):
+    phone_number = CharField(write_only=True, required=True)
+
+    class Meta:
+        model = PersonalInformation
+        fields = ["phone_number"]
 
 
 class TokenResetPasswordSerializer(Serializer):
@@ -118,8 +145,8 @@ class TokenResetPasswordSerializer(Serializer):
 
 
 class VerifyOTPSerializer(Serializer):
-    resident_id = CharField()
-    otp = CharField()
+    phone_number = CharField(write_only=True, required=True)
+    otp = CharField(write_only=True, required=True)
 
 
 class ResetPasswordSerializer(Serializer):

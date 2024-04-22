@@ -2,14 +2,13 @@ from drf_spectacular.utils import extend_schema
 from rest_framework.generics import ListAPIView, RetrieveAPIView
 from rest_framework.viewsets import ViewSet
 
-from . import swaggers
+from . import serializers, swaggers
 from .models import Invoice
-from .serializers import InvoiceSerializer
 
 
 class InvoiceView(ListAPIView, RetrieveAPIView, ViewSet):
     queryset = Invoice.objects.all()
-    serializer_class = InvoiceSerializer
+    serializer_class = serializers.InvoiceSerializer
 
     def get_queryset(self):
         queries = self.queryset

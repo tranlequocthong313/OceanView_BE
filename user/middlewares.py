@@ -19,14 +19,13 @@ class SendOTPRateLimitMiddleware:
             number_of_requests = cache.get(ip)
             if number_of_requests:
                 number_of_requests = cache.incr(ip)
-            else:
-                cache.set(ip, 1, timeout=settings.RATE_LIMIT_EXPIRE_TIME)
-                number_of_requests = 1
-
-            log.warning(f"User request for sending otp {number_of_requests} time(s)")
-
-            if number_of_requests > 1:
-                return HttpResponseForbidden("Only allows sending OTP every 1 minute")
+                log.warning(
+                    f"User request for sending otp {number_of_requests} time(s)"
+                )
+                if number_of_requests > 1:
+                    return HttpResponseForbidden(
+                        "Only allows sending OTP every 1 minute"
+                    )
 
         response = self.get_response(request)
         return response

@@ -56,12 +56,14 @@ class MyUserAdmin(MyBaseModelAdmin):
 
     def ban_user(self, request, user):
         if user.is_banned:
+            log.error(f"{user} is banned already")
             messages.add_message(
                 request, messages.ERROR, f"Ban {user} failed. User has been banned"
             )
         else:
             user.ban()
             messages.add_message(request, messages.SUCCESS, f"Ban {user} successfully")
+            log.info(f"{user} is banned successfully")
 
     @admin.action(description="Khóa tài khoản")
     def ban_users(self, request, queryset):
@@ -70,6 +72,7 @@ class MyUserAdmin(MyBaseModelAdmin):
 
     def unban_user(self, request, user):
         if user.is_banned is False:
+            log.error(f"{user} is not banned")
             messages.add_message(
                 request, messages.ERROR, f"Ban {user} failed. User has not been banned"
             )
@@ -78,6 +81,7 @@ class MyUserAdmin(MyBaseModelAdmin):
             messages.add_message(
                 request, messages.SUCCESS, f"Unban {user} successfully"
             )
+            log.info(f"{user} is unbanned successfully")
 
     @admin.action(description="Mở khóa tài khoản")
     def unban_users(self, request, queryset):
@@ -125,12 +129,14 @@ class PersonalInformationAdmin(MyBaseModelAdmin):
                 if personal_information.has_account():
                     user = personal_information.user
                     user.change_password(password)
+                    log.info("Update new password in case user had one")
                 else:
                     user = get_user_model().create_user(
                         password=password,
                         personal_information=personal_information,
                         issued_by=request.user,
                     )
+                    log.info("Created new account")
 
                 # Prioritize sending emails instead of SMS because Twilio service has many
                 # limitations during trial use. Will change priority if Twilio account can
@@ -145,6 +151,7 @@ class PersonalInformationAdmin(MyBaseModelAdmin):
                         user=user,
                         password=password,
                     )
+                    log.info("Sent account to mail")
                 else:
                     send_sms(
                         template="account/sms/issue_sms",
@@ -152,6 +159,7 @@ class PersonalInformationAdmin(MyBaseModelAdmin):
                         user=user,
                         password=password,
                     )
+                    log.info("Sent account to sms")
 
                 log.info(f"issued new account: {user}")
                 user.issue()
@@ -167,6 +175,7 @@ class PersonalInformationAdmin(MyBaseModelAdmin):
                 log.error(traceback.format_exc())
             return False
         else:
+            log.error("Account has been issued before")
             messages.add_message(
                 request, messages.ERROR, "account has been issued before"
             )

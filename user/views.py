@@ -4,7 +4,7 @@ import traceback
 
 import requests
 from django.core.cache import cache
-from django.core.exceptions import ObjectDoesNotExist
+from django.db.models import Q
 from django.template.response import TemplateResponse
 from django.utils import timezone
 from drf_spectacular.utils import extend_schema
@@ -17,23 +17,16 @@ from rest_framework.viewsets import ViewSet
 
 from app import settings
 from user.models import User
-from utils import email, sms, token
+from utils import email, http, sms, token
 
-from . import swaggers
+from . import serializers, swaggers
 from .permissions import IsOwner
-from .serializers import (
-    ActiveUserSerializer,
-    LoginSerializer,
-    ResetPasswordSerializer,
-    UserSerializer,
-    VerifyOTPSerializer,
-)
 
 log = logging.getLogger(__name__)
 
 
 class UserView(ViewSet, GenericAPIView):
-    serializer_class = UserSerializer
+    serializer_class = serializers.UserSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
@@ -44,29 +37,28 @@ class UserView(ViewSet, GenericAPIView):
         methods=["patch"],
         url_path="active",
         detail=False,
-        serializer_class=ActiveUserSerializer,
+        serializer_class=serializers.ActiveUserSerializer,
         permission_classes=[IsAuthenticated, IsOwner],
     )
     def active(self, request):
-        try:
-            self.check_object_permissions(request=request, obj=request.user)
-            if request.user.is_active_user:
-                return Response(
-                    "User has already actived",
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-
-            serializer = self.serializer_class(request.user, data=request.data)
-            serializer.is_valid(raise_exception=True)
-            user = serializer.save()
-            return Response(UserSerializer(user).data)
-        except ObjectDoesNotExist:
-            log.error("User does not exist for active user")
-            return Response("User does not exist", status=status.HTTP_404_NOT_FOUND)
-        except Exception:
-            log.error(traceback.format_exc())
+        self.check_object_permissions(request=request, obj=request.user)
+        if request.user.is_active_user:
             return Response(
-                "Something went wrong :(", status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                "User has already actived",
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        log.info("{request.user} can active account")
+
+        serializer = self.serializer_class(request.user, data=request.data)
+        serializer.is_valid(raise_exception=True)
+        try:
+            user = serializer.save()
+            log.info("Active {request.user} account")
+            return Response(serializers.UserSerializer(user).data)
+        except Exception:
+            log.error("Server error", traceback.format_exc())
+            return Response(
+                "Something went wrong", status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
     @extend_schema(**swaggers.USER_CURRENT)
@@ -74,7 +66,7 @@ class UserView(ViewSet, GenericAPIView):
         methods=["get"],
         url_path="current",
         detail=False,
-        serializer_class=UserSerializer,
+        serializer_class=serializers.UserSerializer,
     )
     def current_user(self, request):
         return Response(self.serializer_class(request.user).data)
@@ -85,7 +77,7 @@ class UserView(ViewSet, GenericAPIView):
         url_path="login",
         detail=False,
         permission_classes=[AllowAny],
-        serializer_class=LoginSerializer,
+        serializer_class=serializers.LoginSerializer,
     )
     def login(self, request):
         serializer = self.serializer_class(data=request.data)
@@ -99,93 +91,149 @@ class UserView(ViewSet, GenericAPIView):
         }
 
         r = requests.post(url=f"{settings.HOST}/o/token/", data=payload)
+        log.info("Requested to Oauth2 successfully")
 
         if r.status_code == status.HTTP_200_OK:
             user = self.get_queryset().get(pk=serializer.validated_data["username"])
             log.info("User login successfully")
             return Response(
                 {
-                    **UserSerializer(user).data,
+                    **serializers.UserSerializer(user).data,
                     "token": r.json(),
                 },
                 status=status.HTTP_200_OK,
             )
         elif r.status_code != status.HTTP_500_INTERNAL_SERVER_ERROR:
-            log.error("User login failed")
+            log.error("User login failed", r.json())
             return Response("Resident ID or Password is wrong", r.status_code)
         else:
+            log.error("Server error", r.json())
+            return Response(
+                "Something went wrong", status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+    @extend_schema(**swaggers.USER_REFRESH_TOKEN)
+    @action(
+        methods=["post"],
+        url_path="refresh-token",
+        detail=False,
+        permission_classes=[AllowAny],
+        serializer_class=serializers.RefreshTokenSerializer,
+    )
+    def refresh_token(self, request):
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        payload = {
+            **request.data,
+            "grant_type": "refresh_token",
+            "client_id": settings.CLIENT_ID,
+            "client_secret": settings.CLIENT_SECRET,
+        }
+        r = requests.post(url=f"{settings.HOST}/o/token/", data=payload)
+        log.info("Requested to Oauth2 succesfully")
+
+        if r.status_code == status.HTTP_200_OK:
+            log.info("Refresh token successfully")
+            return Response(
+                r.json(),
+                status=status.HTTP_200_OK,
+            )
+        elif r.status_code != status.HTTP_500_INTERNAL_SERVER_ERROR:
+            log.error("Refresh token failed", r.json())
+            return Response("Refresh token failed", r.status_code)
+        else:
+            log.error("Server error", r.json())
             return Response(
                 "Something went wrong", status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
     @extend_schema(**swaggers.USER_FORGOT_PASSWORD)
     @action(
-        methods=["get"],
+        methods=["post"],
         url_path="forgot-password",
-        detail=True,
+        detail=False,
         permission_classes=[AllowAny],
+        serializer_class=serializers.ForgotPasswordSerializer,
     )
-    def forgot_password(self, request, pk):
+    def forgot_password(self, request):
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
         try:
-            user = self.get_queryset().get(pk=pk)
+            user_identifier = serializer.validated_data["user_identifier"]
+            user = (
+                self.get_queryset()
+                .filter(
+                    Q(personal_information__phone_number=user_identifier)
+                    | Q(personal_information__email=user_identifier)
+                )
+                .first()
+            )
+            if user is None:
+                log.error(f"User does not exist for reset password")
+                return Response(
+                    "User does not exist",
+                    status=status.HTTP_404_NOT_FOUND,
+                )
 
-            methods = ["sms"]
-            if user.personal_information.email is not None:
-                methods.append("email")
-
-            log.info(f"User reset password method: {methods}")
+            log.info(f"Reseting password for {user}")
             return Response(
-                {"methods": methods},
+                serializers.MethodForResetPasswordSerializer(
+                    user.personal_information
+                ).data,
                 status=status.HTTP_200_OK,
             )
-        except ObjectDoesNotExist:
-            log.error(f"User does not exist for reset password")
+        except Exception:
+            log.error(traceback.format_exc())
             return Response(
-                "User does not exist",
-                status=status.HTTP_404_NOT_FOUND,
+                "Something went wrong",
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
     @extend_schema(**swaggers.USER_SEND_RESET_PASSWORD_LINK)
     @action(
         methods=["post"],
         url_path="send-reset-password-link",
-        detail=True,
+        detail=False,
         permission_classes=[AllowAny],
+        serializer_class=serializers.SendResetPasswordLinkSerializer,
     )
-    def send_reset_password_link(self, request, pk):
-        try:
-            user = self.get_queryset().get(pk=pk)
+    def send_reset_password_link(self, request):
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = (
+            self.get_queryset()
+            .filter(personal_information__email=serializer.validated_data["email"])
+            .first()
+        )
 
-            if user.personal_information.email is None:
-                log.error(f"User are not allowed for using this method")
-                return Response(
-                    "User cannot use this method",
-                    status=status.HTTP_405_METHOD_NOT_ALLOWED,
-                )
-            else:
-                reset_password_token = token.generate_token(str(pk))
-                cache.set(
-                    f"{str(pk)}",
-                    hashlib.md5(str(reset_password_token).encode()).hexdigest(),
-                    settings.RESET_PASSWORD_TOKEN_EXPIRE_TIME,
-                )
-                email.send_mail(
-                    subject="Quên mật khẩu",
-                    template="account/email/forgot_password",
-                    recipient_list=[user.personal_information.email],
-                    user=user,
-                    link=f"{settings.HOST}/users/reset-password/?token={reset_password_token}",
-                )
-            log.info(f"Sent reset password link")
-            return Response(
-                "Sent reset password link",
-                status=status.HTTP_200_OK,
-            )
-        except ObjectDoesNotExist:
+        if user is None:
             log.error(f"User does not exist for sending reset password link")
             return Response(
                 "User does not exist",
                 status=status.HTTP_404_NOT_FOUND,
+            )
+
+        try:
+            reset_password_token = token.generate_token(str(user.resident_id))
+            log.info("Generated token")
+            cache.set(
+                f"{str(user.resident_id)}",
+                hashlib.md5(str(reset_password_token).encode()).hexdigest(),
+                settings.RESET_PASSWORD_TOKEN_EXPIRE_TIME,
+            )
+            log.info("Saved token to redis")
+            email.send_mail(
+                subject="Quên mật khẩu",
+                template="account/email/forgot_password",
+                recipient_list=[user.personal_information.email],
+                user=user,
+                link=f"{settings.HOST}/users/reset-password/?token={reset_password_token}",
+            )
+            log.info(f"Sent reset password link")
+            return Response(
+                "Sent reset password link",
+                status=status.HTTP_200_OK,
             )
         except Exception:
             log.error(traceback.format_exc())
@@ -198,27 +246,42 @@ class UserView(ViewSet, GenericAPIView):
     @action(
         methods=["post"],
         url_path="send-otp",
-        detail=True,
+        detail=False,
         permission_classes=[AllowAny],
+        serializer_class=serializers.SendOTPSerializer,
     )
-    def send_otp(self, request, pk):
+    def send_otp(self, request):
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
         try:
-            user = self.get_queryset().get(pk=pk)
-
-            sms.send_otp(
-                to=user.personal_information.phone_number,
+            user = (
+                self.get_queryset()
+                .filter(
+                    personal_information__phone_number=serializer.validated_data[
+                        "phone_number"
+                    ]
+                )
+                .first()
             )
 
-            log.info(f"Sent reset password otp")
+            if user is None:
+                log.error(f"User does not exist for sending otp")
+                return Response(
+                    "User does not exist",
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+
+            verification = sms.send_otp(
+                to=user.personal_information.phone_number,
+            )
+            ip = str(http.get_client_ip(request))
+            cache.set(ip, 1, timeout=settings.RATE_LIMIT_EXPIRE_TIME)
+
+            log.info(f"Verification {verification}")
+            log.info(f"Sent reset password otp to {user}")
             return Response(
                 "Sent reset password otp",
                 status=status.HTTP_200_OK,
-            )
-        except ObjectDoesNotExist:
-            log.error(f"User does not exist for sending otp")
-            return Response(
-                "User does not exist",
-                status=status.HTTP_404_NOT_FOUND,
             )
         except Exception:
             log.error(traceback.format_exc())
@@ -233,39 +296,47 @@ class UserView(ViewSet, GenericAPIView):
         url_path="verify-otp",
         detail=False,
         permission_classes=[AllowAny],
-        serializer_class=VerifyOTPSerializer,
+        serializer_class=serializers.VerifyOTPSerializer,
     )
     def verify_otp(self, request):
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
-        resident_id = serializer.validated_data["resident_id"]
+        phone_number = serializer.validated_data["phone_number"]
         otp = serializer.validated_data["otp"]
         try:
-            user = self.get_queryset().get(pk=resident_id)
+            user = (
+                self.get_queryset()
+                .filter(personal_information__phone_number=phone_number)
+                .first()
+            )
+            if user is None:
+                log.error(f"User does not exist")
+                return Response(
+                    "User does not exist",
+                    status=status.HTTP_404_NOT_FOUND,
+                )
 
             verified = sms.verify_otp(
-                to=user.personal_information.phone_number,
+                to=phone_number,
                 otp=otp,
             )
             if verified is False:
-                log.error(f"User does not exist for sending otp")
+                log.error(f"Verify OTP failed {user}")
                 return Response("OTP is invalid", status=status.HTTP_401_UNAUTHORIZED)
 
-            reset_password_token = token.generate_token(str(resident_id))
+            reset_password_token = token.generate_token(str(user.resident_id))
+            log.info("Generated token")
             cache.set(
-                f"{str(resident_id)}",
+                f"{str(user.resident_id)}",
                 hashlib.md5(str(reset_password_token).encode()).hexdigest(),
                 settings.RESET_PASSWORD_TOKEN_EXPIRE_TIME,
             )
+            log.info("Saved token to redis")
+            log.info("Verified OTP successfully")
 
             return Response(
                 {"token": reset_password_token},
                 status=status.HTTP_200_OK,
-            )
-        except ObjectDoesNotExist:
-            return Response(
-                "User does not exist",
-                status=status.HTTP_404_NOT_FOUND,
             )
         except Exception:
             log.error(traceback.format_exc())
@@ -297,6 +368,7 @@ class UserView(ViewSet, GenericAPIView):
             log.error(f"Token in cache not same as user token")
             return False, Response(status=status.HTTP_401_UNAUTHORIZED)
 
+        log.info(f"Token is valid")
         return True, payload
 
     @extend_schema(**swaggers.USER_RESET_PASSWORD_GET)
@@ -306,6 +378,7 @@ class UserView(ViewSet, GenericAPIView):
         detail=False,
         url_path="reset-password",
         permission_classes=[AllowAny],
+        serializer_class=serializers.ResetPasswordSerializer,
     )
     def reset_password(self, request):
         if request.method == "GET":
@@ -333,23 +406,31 @@ class UserView(ViewSet, GenericAPIView):
         )
 
     def post_reset_password(self, request):
-        serializer = ResetPasswordSerializer(data=request.data)
+        serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
-        reset_password_token = request.GET.get("token")
-        is_valid, payload_or_response = self.validate_reset_password_token(
-            reset_password_token
-        )
-        if not is_valid:
-            return payload_or_response
+        try:
+            reset_password_token = request.GET.get("token")
+            is_valid, payload_or_response = self.validate_reset_password_token(
+                reset_password_token
+            )
+            if not is_valid:
+                return payload_or_response
 
-        return self.process_reset_password(
-            serializer.validated_data["password"], payload_or_response
-        )
+            return self.process_reset_password(
+                serializer.validated_data["password"], payload_or_response
+            )
+        except Exception:
+            log.error(traceback.format_exc())
+            return Response(
+                "Something went wrong",
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
 
     def process_reset_password(self, password, resident_id):
         user = self.get_queryset().get(pk=resident_id)
         user.change_password(password)
         cache.delete(f"{resident_id}")
+        log.info(f"Updated password")
         self.send_reset_password_confirm_mail(user)
         log.info(f"Reset password successfully")
         return Response("Reset password successfully", status=status.HTTP_200_OK)

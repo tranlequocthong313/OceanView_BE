@@ -4,11 +4,16 @@ from drf_spectacular.utils import OpenApiExample, OpenApiParameter
 from user.models import User
 from user.serializers import (
     ActiveUserSerializer,
+    ForgotPasswordSerializer,
     LoginSerializer,
     LogonUserSerializer,
     MethodForResetPasswordSerializer,
+    RefreshTokenSerializer,
     ResetPasswordSerializer,
+    SendOTPSerializer,
+    SendResetPasswordLinkSerializer,
     TokenResetPasswordSerializer,
+    TokenSerializer,
     UserSerializer,
     VerifyOTPSerializer,
 )
@@ -91,24 +96,70 @@ USER_LOGIN = {
     ],
 }
 
+USER_REFRESH_TOKEN = {
+    "description": "Refresh token",
+    "request": RefreshTokenSerializer,
+    "responses": {200: TokenSerializer},
+    "examples": [
+        OpenApiExample(
+            "Example",
+            value={"token": "GsiUVpcAVe0MuRf9HFlYYT9DMPuqq1"},
+            request_only=True,
+        ),
+        OpenApiExample(
+            "Example",
+            value={
+                "access_token": "233tBiWpUQ8W9O5FwHJ1mGH85RVRCI",
+                "expires_in": 36000,
+                "token_type": "Bearer",
+                "scope": "read write",
+                "refresh_token": "GsiUVpcAVe0MuRf9HFlYYT9DMPuqq1",
+            },
+            response_only=True,
+        ),
+    ],
+}
+
 USER_FORGOT_PASSWORD = {
     "description": "Checks if the user exists and returns possible methods to reset the password",
+    "request": ForgotPasswordSerializer,
     "responses": {200: MethodForResetPasswordSerializer},
-    "examples": [OpenApiExample("Example", value=["sms", "email"])],
+    "examples": [
+        OpenApiExample(
+            "Example",
+            value={"user_identifier": "ngvana@gmail.com | 0930352684"},
+            request_only=True,
+        ),
+        OpenApiExample(
+            "Example",
+            value={"phone_number": "0930352684", "email": "ngvana@gmail.com"},
+            response_only=True,
+        ),
+    ],
 }
 
 USER_SEND_RESET_PASSWORD_LINK = {
     "description": "Send reset link to email to reset password",
-    "request": None,
+    "request": SendResetPasswordLinkSerializer,
     "responses": {200: OpenApiTypes.STR},
-    "examples": [OpenApiExample("Example", value="Sent reset password link")],
+    "examples": [
+        OpenApiExample(
+            "Example", value={"email": "ngvana@gmail.com"}, request_only=True
+        ),
+        OpenApiExample("Example", value="Sent reset password link", response_only=True),
+    ],
 }
 
 USER_SEND_OTP = {
     "description": "Send otp to sms to reset password",
-    "request": None,
+    "request": SendOTPSerializer,
     "responses": {200: OpenApiTypes.STR},
-    "examples": [OpenApiExample("Example", value="Sent reset password otp")],
+    "examples": [
+        OpenApiExample(
+            "Example", value={"phone_number": "0930352684"}, request_only=True
+        ),
+        OpenApiExample("Example", value="Sent reset password otp", response_only=True),
+    ],
 }
 
 USER_VERIFY_OTP = {
@@ -118,7 +169,7 @@ USER_VERIFY_OTP = {
     "examples": [
         OpenApiExample(
             "Example",
-            value={"resident_id": "240269", "otp": "943245"},
+            value={"phone_number": "0930352684", "otp": "943245"},
             request_only=True,
         ),
         OpenApiExample(
