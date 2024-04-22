@@ -2,6 +2,8 @@ from cloudinary.models import CloudinaryField
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
+from user.models import User
+
 
 class Feedback(models.Model):
     class FeedbackType(models.TextChoices):
@@ -17,6 +19,9 @@ class Feedback(models.Model):
     )
     image = CloudinaryField(_("Ảnh"), null=True, blank=True)
     deleted = models.BooleanField(verbose_name=_("Đã xóa"), default=False)
+    author = models.ForeignKey(
+        verbose_name=_("Tác giả"), to=User, on_delete=models.CASCADE
+    )
 
     def unsoft_delete(self):
         self.deleted = False
