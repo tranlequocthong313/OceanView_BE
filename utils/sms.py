@@ -27,7 +27,7 @@ class SMS:
         self.content = content
 
     def send(self):
-        client.messages.create(
+        return client.messages.create(
             to=self.to, from_=settings.TWILIO_NUMBER, body=self.content
         )
 
@@ -46,7 +46,7 @@ def render_content(template, context):
 
 
 def send_sms(template, to, **context):
-    SMS(render_content(template, context), to).send()
+    return SMS(render_content(template, context), to).send()
 
 
 def send_sms_async(template, to, **context):
@@ -54,8 +54,6 @@ def send_sms_async(template, to, **context):
 
 
 def send_otp(to):
-    print(
-        client.verify.v2.services(TWILIO_SERVICE_SID).verifications.create(
-            to=f"+84{to}", channel="sms"
-        )
+    return client.verify.v2.services(TWILIO_SERVICE_SID).verifications.create(
+        to=f"+84{to}", channel="sms"
     )

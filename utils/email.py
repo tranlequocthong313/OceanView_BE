@@ -17,7 +17,7 @@ class Email:
             to=self.recipient_list,
         )
         msg.attach_alternative(self.content["html_content"], "text/html")
-        msg.send()
+        return msg.send()
 
 
 class EmailThread(Email, threading.Thread):
@@ -40,7 +40,7 @@ def render_content(template, context):
 
 
 def send_mail(subject, template, recipient_list, **context):
-    Email(subject, render_content(template, context), recipient_list).send()
+    return Email(subject, render_content(template, context), recipient_list).send()
 
 
 def send_mail_async(subject, template, recipient_list, **context):

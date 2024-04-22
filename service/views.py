@@ -1,3 +1,5 @@
+import traceback
+
 from django.db import transaction
 from django.db.models.query import Q
 from drf_spectacular.utils import extend_schema
@@ -10,18 +12,14 @@ from rest_framework.viewsets import ViewSet
 from user.models import PersonalInformation
 from utils import get_logger
 
-from . import swaggers
+from . import serializers, swaggers
 from .models import Relative, Service, ServiceRegistration, VehicleInformation
-from .serializers import (
-    AccessCardServiceRegistrationSerializer,
-    ParkingCardServiceRegistrationSerializer,
-)
 
 log = get_logger(__name__)
 
 
 class ServiceRegistrationView(ViewSet):
-    serializer_class = AccessCardServiceRegistrationSerializer
+    serializer_class = serializers.AccessCardServiceRegistrationSerializer
     permission_classes = [IsAuthenticated]
 
     # You can save the policy on the number of vehicles for each
@@ -53,50 +51,57 @@ class ServiceRegistrationView(ViewSet):
         relative_data = serializer.validated_data.get("relative")
         personal_information_data = relative_data.get("personal_information")
 
-        if request.user.is_same_person(personal_information_data):
-            return Response(
-                "You do not need an access card",
-                status.HTTP_400_BAD_REQUEST,
-            )
+        try:
+            if request.user.is_same_person(personal_information_data):
+                log.error(f"{request.user} do not need an access card")
+                return Response(
+                    "You do not need an access card",
+                    status.HTTP_400_BAD_REQUEST,
+                )
 
-        personal_information = PersonalInformation.objects.filter(
-            Q(citizen_id=personal_information_data["citizen_id"])
-            | Q(phone_number=personal_information_data["phone_number"])
-        ).first()
-        if personal_information.user is not None:
-            return Response(
-                "This person is a resident and do not need an access card",
-                status.HTTP_400_BAD_REQUEST,
-            )
+            personal_information = PersonalInformation.objects.filter(
+                Q(citizen_id=personal_information_data["citizen_id"])
+                | Q(phone_number=personal_information_data["phone_number"])
+            ).first()
 
-        if personal_information is None:
-            personal_information = PersonalInformation.objects.create(
-                **personal_information_data
-            )
-        relative = Relative.objects.filter(
-            personal_information__citizen_id=personal_information.citizen_id,
-        ).first()
-        if relative is None:
-            relative = Relative.objects.create(
-                relationship=relative_data.get("relationship", None),
+            if personal_information is None:
+                personal_information = PersonalInformation.objects.create(
+                    **personal_information_data
+                )
+                log.info("Created new personal information")
+            relative = Relative.objects.filter(
+                personal_information__citizen_id=personal_information.citizen_id,
+            ).first()
+            if relative is None:
+                relative = Relative.objects.create(
+                    relationship=relative_data.get("relationship", None),
+                    personal_information=personal_information,
+                )
+                log.info("Created new relative")
+            relative.residents.add(request.user)
+            log.info(f"Added {request.user} to {relative}'s relatives")
+            if self.registered_service(
+                service_id=Service.ServiceType.ACCESS_CARD,
+                citizen_id=personal_information.citizen_id,
+            ):
+                log.error(f"{relative} has registered for an access card")
+                return Response(
+                    "This person has registered for an access card",
+                    status.HTTP_400_BAD_REQUEST,
+                )
+
+            service_registration = ServiceRegistration.objects.create(
+                service_id=Service.ServiceType.ACCESS_CARD,
                 personal_information=personal_information,
+                resident=request.user,
             )
-        relative.residents.add(request.user)
-        if self.registered_service(
-            service_id=Service.ServiceType.ACCESS_CARD,
-            citizen_id=personal_information.citizen_id,
-        ):
+            log.info(f"{relative} registered successfully")
+            return Response(self.serializer_class(service_registration).data)
+        except Exception:
+            log.error("Server error", traceback.format_exc())
             return Response(
-                "This person has registered for an access card",
-                status.HTTP_400_BAD_REQUEST,
+                "Something went wrong", status.HTTP_500_INTERNAL_SERVER_ERROR
             )
-
-        service_registration = ServiceRegistration.objects.create(
-            service_id=Service.ServiceType.ACCESS_CARD,
-            personal_information=personal_information,
-            resident=request.user,
-        )
-        return Response(self.serializer_class(service_registration).data)
 
     def is_valid_vehicle_limit(self, apartment_id, vehicle_type):
         vehicle_count = VehicleInformation.objects.filter(
@@ -117,84 +122,103 @@ class ServiceRegistrationView(ViewSet):
     @transaction.atomic
     def parking_card(self, request):
         if request.user.apartment_set.count() == 0:
+            log.error(f"{request.user} doesn't live in an apartment")
             return Response(
                 "You don't live in an apartment, so you don't have the right to register for a parking card",
                 status.HTTP_403_FORBIDDEN,
             )
-        serializer = ParkingCardServiceRegistrationSerializer(data=request.data)
+        serializer = serializers.ParkingCardServiceRegistrationSerializer(
+            data=request.data
+        )
         serializer.is_valid(raise_exception=True)
 
-        room_number = serializer.validated_data["room_number"]
-        if not request.user.apartment_set.filter(room_number=room_number).exists():
-            return Response(
-                "This apartment does not belong to you, so you cannot register for a parking card",
-                status=status.HTTP_403_FORBIDDEN,
-            )
-
-        # 2 motors, 2 bikes and 1 car per apartment
-        vehicle_information = serializer.validated_data["vehicle_information"]
-        if not self.is_valid_vehicle_limit(
-            apartment_id=room_number,
-            vehicle_type=vehicle_information["vehicle_type"],
-        ):
-            return Response(
-                f"The apartment's limit of {self.max_vehicle_counts[vehicle_information['vehicle_type']]} {VehicleInformation.get_vehicle_type_label(vehicle_information['vehicle_type'])} has been reached",
-                status.HTTP_403_FORBIDDEN,
-            )
-
-        relative_data = serializer.validated_data["relative"]
-        personal_information_data = relative_data.get("personal_information")
-
-        if request.user.is_same_person(personal_information_data):
-            log.info("Register for current resident...")
-            service_id = VehicleInformation.get_service_id(
-                vehicle_information["vehicle_type"]
-            )
-            service_registration = ServiceRegistration.objects.create(
-                service_id=service_id,
-                personal_information=request.user.personal_information,
-                resident=request.user,
-            )
-            VehicleInformation.objects.create(
-                license_plate=vehicle_information["license_plate"],
-                vehicle_type=vehicle_information["vehicle_type"],
-                service_registration=service_registration,
-                apartment_id=room_number,
-            )
-            return Response(self.serializer_class(service_registration).data)
-        else:
-            log.info("Register for relatives...")
-            personal_information = PersonalInformation.objects.filter(
-                Q(citizen_id=personal_information_data["citizen_id"])
-                | Q(phone_number=personal_information_data["phone_number"])
-            ).first()
-            if personal_information is None:
-                personal_information = PersonalInformation.objects.create(
-                    **personal_information_data
+        try:
+            room_number = serializer.validated_data["room_number"]
+            if not request.user.apartment_set.filter(room_number=room_number).exists():
+                log.error(f"{request.user} doesn't live in {room_number} room")
+                return Response(
+                    "This apartment does not belong to you, so you cannot register for a parking card",
+                    status=status.HTTP_403_FORBIDDEN,
                 )
 
-            relative = Relative.objects.filter(
-                personal_information__citizen_id=personal_information.citizen_id,
-            ).first()
-            if relative is None:
-                relative = Relative.objects.create(
-                    relationship=relative_data.get("relationship", None),
+            log.info(f"{request.user}'s room is {room_number}")
+            # 2 motors, 2 bikes and 1 car per apartment
+            vehicle_information = serializer.validated_data["vehicle_information"]
+            if not self.is_valid_vehicle_limit(
+                apartment_id=room_number,
+                vehicle_type=vehicle_information["vehicle_type"],
+            ):
+                log.error(
+                    f"{room_number} can't have more {VehicleInformation.get_vehicle_type_label(vehicle_information['vehicle_type'])}"
+                )
+                return Response(
+                    f"The apartment's limit of {self.max_vehicle_counts[vehicle_information['vehicle_type']]} {VehicleInformation.get_vehicle_type_label(vehicle_information['vehicle_type'])} has been reached",
+                    status.HTTP_403_FORBIDDEN,
+                )
+
+            relative_data = serializer.validated_data["relative"]
+            personal_information_data = relative_data.get("personal_information")
+
+            if request.user.is_same_person(personal_information_data):
+                log.debug(f"Registering for current resident {request.user}...")
+                service_id = VehicleInformation.get_service_id(
+                    vehicle_information["vehicle_type"]
+                )
+                service_registration = ServiceRegistration.objects.create(
+                    service_id=service_id,
+                    personal_information=request.user.personal_information,
+                    resident=request.user,
+                )
+                VehicleInformation.objects.create(
+                    license_plate=vehicle_information["license_plate"],
+                    vehicle_type=vehicle_information["vehicle_type"],
+                    service_registration=service_registration,
+                    apartment_id=room_number,
+                )
+                log.info(f"Registered {request.user} successfully")
+                return Response(self.serializer_class(service_registration).data)
+            else:
+                log.debug("Register for relatives...")
+                personal_information = PersonalInformation.objects.filter(
+                    Q(citizen_id=personal_information_data["citizen_id"])
+                    | Q(phone_number=personal_information_data["phone_number"])
+                ).first()
+                if personal_information is None:
+                    personal_information = PersonalInformation.objects.create(
+                        **personal_information_data
+                    )
+                    log.info("Created new personal information")
+
+                relative = Relative.objects.filter(
+                    personal_information__citizen_id=personal_information.citizen_id,
+                ).first()
+                if relative is None:
+                    relative = Relative.objects.create(
+                        relationship=relative_data.get("relationship", None),
+                        personal_information=personal_information,
+                    )
+                    log.info("Created new relative")
+                relative.residents.add(request.user)
+                log.info(f"Added {request.user} to {relative}'s relatives")
+
+                service_id = VehicleInformation.get_service_id(
+                    vehicle_information["vehicle_type"]
+                )
+                service_registration = ServiceRegistration.objects.create(
+                    service_id=service_id,
                     personal_information=personal_information,
+                    resident=request.user,
                 )
-            relative.residents.add(request.user)
-
-            service_id = VehicleInformation.get_service_id(
-                vehicle_information["vehicle_type"]
+                VehicleInformation.objects.create(
+                    license_plate=vehicle_information["license_plate"],
+                    vehicle_type=vehicle_information["vehicle_type"],
+                    service_registration=service_registration,
+                    apartment_id=room_number,
+                )
+                log.info(f"Registered for {relative} successfully")
+                return Response(self.serializer_class(service_registration).data)
+        except Exception:
+            log.error("Server error", traceback.format_exc())
+            return Response(
+                "Something went wrong", status.HTTP_500_INTERNAL_SERVER_ERROR
             )
-            service_registration = ServiceRegistration.objects.create(
-                service_id=service_id,
-                personal_information=personal_information,
-                resident=request.user,
-            )
-            VehicleInformation.objects.create(
-                license_plate=vehicle_information["license_plate"],
-                vehicle_type=vehicle_information["vehicle_type"],
-                service_registration=service_registration,
-                apartment_id=room_number,
-            )
-            return Response(self.serializer_class(service_registration).data)
