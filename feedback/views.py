@@ -19,6 +19,10 @@ class FeedbackView(ModelViewSet):
 
         return queries.all()
 
+    def get_serializer(self, *args, **kwargs):
+        kwargs["context"] = {"user": self.request.user}
+        return super().get_serializer(*args, **kwargs)
+
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
         instance.soft_delete()
