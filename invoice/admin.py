@@ -1,11 +1,17 @@
 import logging
 
-from django.apps import apps
-
 from app.admin import MyBaseModelAdmin, admin_site
 from utils import format
 
+from . import models
+
 log = logging.getLogger(__name__)
+
+
+class InvoiceTypeAdmin(MyBaseModelAdmin):
+    list_display = ("name", "description")
+    search_fields = ("name", "description")
+    list_filter = ("name",)
 
 
 class InvoiceAdmin(MyBaseModelAdmin):
@@ -46,12 +52,6 @@ class InvoiceDetailAdmin(MyBaseModelAdmin):
     list_filter = ("payment_method",)
 
 
-model_admins = {
-    "invoice": InvoiceAdmin,
-    "invoicedetail": InvoiceDetailAdmin,
-}
-
-apartment_app = apps.get_app_config("invoice")
-
-for model_name, model in apartment_app.models.items():
-    admin_site.register(model, model_admins.get(model_name))
+admin_site.register(models.InvoiceType, InvoiceTypeAdmin)
+admin_site.register(models.Invoice, InvoiceAdmin)
+admin_site.register(models.InvoiceDetail, InvoiceDetailAdmin)

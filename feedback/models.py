@@ -2,10 +2,11 @@ from cloudinary.models import CloudinaryField
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
+from app.models import MyBaseModel
 from user.models import User
 
 
-class Feedback(models.Model):
+class Feedback(MyBaseModel):
     class FeedbackType(models.TextChoices):
         QUESTION = "QUESTION", _("Thắc mắc")
         COMPLAIN = "COMPLAIN", _("Phàn nàn")
@@ -22,6 +23,10 @@ class Feedback(models.Model):
     author = models.ForeignKey(
         verbose_name=_("Tác giả"), to=User, on_delete=models.CASCADE
     )
+
+    class Meta:
+        verbose_name = _("Phản ánh")
+        verbose_name_plural = _("Phản ánh")
 
     def unsoft_delete(self):
         self.deleted = False

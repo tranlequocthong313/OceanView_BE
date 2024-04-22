@@ -64,6 +64,10 @@ class User(AbstractBaseUser, PermissionsMixin):
         ACTIVE = "ACTIVE", _("Đã kích hoạt")
         BANNED = "BANNED", _("Bị khóa")
 
+    class LockerStatus(models.TextChoices):
+        EMPTY = "EMPTY", _("Trống")
+        NOT_EMPTY = "NOT_EMPTY", _("Có đồ")
+
     resident_id = models.CharField(
         _("Mã số cư dân"),
         max_length=6,

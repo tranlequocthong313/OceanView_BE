@@ -1,6 +1,8 @@
 from django.contrib.auth import get_user_model
 from django.core.validators import MinLengthValidator, MinValueValidator
 from django.db import models
+from django.db.models.signals import pre_save
+from django.dispatch import receiver
 from django.utils.translation import gettext_lazy as _
 
 from app.models import MyBaseModel
@@ -27,7 +29,7 @@ class ApartmentBuilding(MyBaseModel):
 
 class Building(MyBaseModel):
     name = models.CharField(_("Tên tòa nhà"), max_length=10, primary_key=True)
-    number_of_floors = models.SmallIntegerField(
+    number_of_floors = models.PositiveSmallIntegerField(
         _("Số tầng"), validators=[MinValueValidator(0)]
     )
     apartment_building = models.ForeignKey(
@@ -44,18 +46,22 @@ class Building(MyBaseModel):
 
 class ApartmentType(MyBaseModel):
     name = models.CharField(_("Tên loại căn hộ"), max_length=50)
-    width = models.SmallIntegerField(_("Chiều rộng"), validators=[MinValueValidator(0)])
-    height = models.SmallIntegerField(_("Chiều dài"), validators=[MinValueValidator(0)])
-    number_of_bedroom = models.SmallIntegerField(
+    width = models.PositiveSmallIntegerField(
+        _("Chiều rộng"), validators=[MinValueValidator(0)]
+    )
+    height = models.PositiveSmallIntegerField(
+        _("Chiều dài"), validators=[MinValueValidator(0)]
+    )
+    number_of_bedroom = models.PositiveSmallIntegerField(
         _("Số phòng ngủ"), validators=[MinValueValidator(0)]
     )
-    number_of_living_room = models.SmallIntegerField(
+    number_of_living_room = models.PositiveSmallIntegerField(
         _("Số phòng khách"), validators=[MinValueValidator(0)]
     )
-    number_of_kitchen = models.SmallIntegerField(
+    number_of_kitchen = models.PositiveSmallIntegerField(
         _("Số phòng bếp"), validators=[MinValueValidator(0)]
     )
-    number_of_restroom = models.SmallIntegerField(
+    number_of_restroom = models.PositiveSmallIntegerField(
         _("Số nhà tắm"), validators=[MinValueValidator(0)]
     )
 
@@ -74,7 +80,9 @@ class Apartment(MyBaseModel):
         ABOUT_TO_MOVE = "ABOUT_TO_MOVE", _("Sắp chuyển đi")
 
     room_number = models.CharField(_("Số phòng"), primary_key=True, max_length=20)
-    floor = models.SmallIntegerField(_("Tầng"), validators=[MinValueValidator(0)])
+    floor = models.PositiveSmallIntegerField(
+        _("Tầng"), validators=[MinValueValidator(0)]
+    )
     apartment_type = models.ForeignKey(
         verbose_name=_("Loại căn hộ"),
         to=ApartmentType,
@@ -104,11 +112,16 @@ class Apartment(MyBaseModel):
     def save(self, *args, **kwargs):
         if self.floor > self.building.number_of_floors:
             raise ValueError(
-                "appartment's floor must be less than or equal the building's number of floors"
+                "Apartment's floor must be less than or equal to the building's number of floors"
             )
-        self.room_number = Apartment.generate_room_number(
-            building_name=self.building, floor=self.floor, room_number=self.room_number
-        )
+
+        if self._state.adding:
+            self.room_number = Apartment.generate_room_number(
+                building_name=self.building,
+                floor=self.floor,
+                room_number=self.room_number,
+            )
+
         super().save(*args, **kwargs)
 
     def __str__(self) -> str:

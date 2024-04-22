@@ -1,4 +1,5 @@
-import logging
+from django.contrib import admin
+from django.utils.translation import gettext_lazy as _
 
 from app.admin import MyBaseModelAdmin, admin_site
 from utils import format
@@ -10,7 +11,20 @@ from .models import (
     VehicleInformation,
 )
 
-log = logging.getLogger(__name__)
+
+class RelativeAdmin(MyBaseModelAdmin):
+    list_display = ("id", "relationship", "personal_information")
+    search_fields = (
+        "id",
+        "relationship",
+        "personal_information__citizen_id",
+        "personal_information__full_name",
+        "personal_information__phone_number",
+        "personal_information__email",
+    )
+
+
+admin.site.register(Relative, RelativeAdmin)
 
 
 class ServiceAdmin(MyBaseModelAdmin):
@@ -45,7 +59,7 @@ class ServiceRegistrationAdmin(MyBaseModelAdmin):
         "personal_information__full_name",
         "personal_information__phone_number",
         "personal_information__email",
-        "resident_id",
+        "resident__resident_id",
         "status",
     )
     list_filter = ("status",)
@@ -63,13 +77,10 @@ class VehicleInformationAdmin(MyBaseModelAdmin):
         "vehicle_type",
         "apartment__room_number",
     )
-    list_filter = (
-        "vehicle_type",
-        "apartment__room_number",
-    )
+    list_filter = ("vehicle_type",)
 
 
-admin_site.register(Relative)
+admin_site.register(Relative, RelativeAdmin)
 admin_site.register(VehicleInformation, VehicleInformationAdmin)
 admin_site.register(Service, ServiceAdmin)
 admin_site.register(ServiceRegistration, ServiceRegistrationAdmin)

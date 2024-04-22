@@ -1,7 +1,7 @@
 from django.apps import AppConfig
 
 
-class FeedbackConfig(AppConfig):
+class LockerConfig(AppConfig):
     default_auto_field = "django.db.models.BigAutoField"
-    name = "feedback"
-    verbose_name = "Phản ánh"
+    name = "locker"
+    verbose_name = "Tủ đồ"

@@ -355,12 +355,12 @@ class UserView(ViewSet, GenericAPIView):
             max_age=settings.RESET_PASSWORD_TOKEN_EXPIRE_TIME,
         )
         if not payload:
-            log.error(f"Token is invalid")
+            log.error(f"Token is invalid or expired")
             return False, Response(status=status.HTTP_401_UNAUTHORIZED)
 
         cached_token = cache.get(f"{payload}")
         if cached_token is False:
-            log.error(f"Token is expired")
+            log.error(f"Token does not exist in cache")
             return False, Response(status=status.HTTP_401_UNAUTHORIZED)
 
         hashed_token = hashlib.md5(str(reset_password_token).encode()).hexdigest()

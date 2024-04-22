@@ -1,10 +1,30 @@
 import logging
 
-from django.apps import apps
-
 from app.admin import MyBaseModelAdmin, admin_site
 
+from . import models
+
 log = logging.getLogger(__name__)
+
+
+class ApartmentBuildingAdmin(MyBaseModelAdmin):
+    list_display = ["name", "address", "owner", "phone_number", "built_date"]
+
+
+class BuildingAdmin(MyBaseModelAdmin):
+    list_display = ["name", "number_of_floors", "apartment_building"]
+
+
+class ApartmentTypeAdmin(MyBaseModelAdmin):
+    list_display = [
+        "name",
+        "width",
+        "height",
+        "number_of_bedroom",
+        "number_of_living_room",
+        "number_of_kitchen",
+        "number_of_restroom",
+    ]
 
 
 class ApartmentAdmin(MyBaseModelAdmin):
@@ -22,15 +42,10 @@ class ApartmentAdmin(MyBaseModelAdmin):
         "status",
         "apartment_type__name",
     )
+    filter_horizontal = ["residents"]
 
 
-# TODO: Custom Apartment Residents admin model view
-
-model_admins = {
-    "apartment": ApartmentAdmin,
-}
-
-apartment_app = apps.get_app_config("apartment")
-
-for model_name, model in apartment_app.models.items():
-    admin_site.register(model, model_admins.get(model_name))
+admin_site.register(models.Apartment, ApartmentAdmin)
+admin_site.register(models.ApartmentBuilding, ApartmentBuildingAdmin)
+admin_site.register(models.ApartmentType, ApartmentTypeAdmin)
+admin_site.register(models.Building, BuildingAdmin)

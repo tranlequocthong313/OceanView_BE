@@ -1,6 +1,4 @@
 from django.contrib import admin
-from django.template.response import TemplateResponse
-from django.urls import URLResolver, path
 
 from app import settings
 
