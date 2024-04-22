@@ -3,17 +3,7 @@ from datetime import datetime
 from cloudinary.models import CloudinaryField
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from django.core.validators import MinLengthValidator
-from django.db.models import (
-    CASCADE,
-    SET_NULL,
-    BooleanField,
-    CharField,
-    DateField,
-    EmailField,
-    ForeignKey,
-    OneToOneField,
-    TextChoices,
-)
+from django.db import models
 from django.utils.translation import gettext_lazy as _
 
 from app.models import MyBaseModel
@@ -22,27 +12,27 @@ from .managers import CustomUserWithForeignKeyManager
 
 
 class PersonalInformation(MyBaseModel):
-    class Gender(TextChoices):
+    class Gender(models.TextChoices):
         MALE = "MALE", _("Nam")
         FEMALE = "FEMALE", _("Nữ")
 
-    citizen_id = CharField(
+    citizen_id = models.CharField(
         _("Số căn cước công dân"),
         max_length=12,
         validators=[MinLengthValidator(12)],
         primary_key=True,
     )
-    full_name = CharField(_("Họ tên"), max_length=50)
-    date_of_birth = DateField(_("Ngày sinh"), null=True, blank=True)
-    phone_number = CharField(
+    full_name = models.CharField(_("Họ tên"), max_length=50)
+    date_of_birth = models.DateField(_("Ngày sinh"), null=True, blank=True)
+    phone_number = models.CharField(
         _("Số điện thoại"),
         max_length=11,
         unique=True,
         validators=[MinLengthValidator(10)],
     )
-    email = EmailField(_("Email"), unique=True, null=True, blank=True)
-    hometown = CharField(_("Quê quán"), max_length=50, null=True, blank=True)
-    gender = CharField(
+    email = models.EmailField(_("Email"), unique=True, null=True, blank=True)
+    hometown = models.CharField(_("Quê quán"), max_length=50, null=True, blank=True)
+    gender = models.CharField(
         _("Giới tính"), max_length=6, choices=Gender.choices, default=Gender.MALE
     )
 
@@ -68,47 +58,47 @@ class PersonalInformation(MyBaseModel):
 
 
 class User(AbstractBaseUser, PermissionsMixin):
-    class Status(TextChoices):
+    class Status(models.TextChoices):
         NOT_ISSUED_YET = "NOT_ISSUED_YET", _("Chưa cấp phát")
         ISSUED = "ISSUED", _("Đã cấp phát")
         ACTIVE = "ACTIVE", _("Đã kích hoạt")
         BANNED = "BANNED", _("Bị khóa")
 
-    resident_id = CharField(
+    resident_id = models.CharField(
         _("Mã số cư dân"),
         max_length=6,
         unique=True,
         primary_key=True,
         validators=[MinLengthValidator(6)],
     )
-    personal_information = OneToOneField(
+    personal_information = models.OneToOneField(
         verbose_name=_("Thông tin cá nhân"),
         to=PersonalInformation,
-        on_delete=CASCADE,
+        on_delete=models.CASCADE,
     )
-    password = CharField(
+    password = models.CharField(
         _("Mật khẩu"), max_length=128, validators=[MinLengthValidator(8)]
     )
     avatar = CloudinaryField(_("Ảnh đại diện"), null=True, blank=True)
-    is_staff = BooleanField(_("Là staff"), default=False)
-    is_superuser = BooleanField(_("Là superuser"), default=False)
-    previous_status = CharField(
+    is_staff = models.BooleanField(_("Là staff"), default=False)
+    is_superuser = models.BooleanField(_("Là superuser"), default=False)
+    previous_status = models.CharField(
         _("Trạng thái trước khị bị ban"),
         max_length=15,
         choices=Status.choices,
         null=True,
         blank=True,
     )
-    status = CharField(
+    status = models.CharField(
         _("Trạng thái"),
         max_length=15,
         choices=Status.choices,
         default=Status.NOT_ISSUED_YET,
     )
-    issued_by = ForeignKey(
+    issued_by = models.ForeignKey(
         verbose_name=_("Cấp phát bởi"),
         to="self",
-        on_delete=SET_NULL,
+        on_delete=models.SET_NULL,
         null=True,
         blank=True,
     )

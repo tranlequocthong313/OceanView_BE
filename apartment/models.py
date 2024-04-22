@@ -1,30 +1,21 @@
 from django.contrib.auth import get_user_model
 from django.core.validators import MinLengthValidator, MinValueValidator
-from django.db.models import (
-    CASCADE,
-    SET_NULL,
-    CharField,
-    DateField,
-    ForeignKey,
-    ManyToManyField,
-    SmallIntegerField,
-    TextChoices,
-)
+from django.db import models
 from django.utils.translation import gettext_lazy as _
 
 from app.models import MyBaseModel
 
 
 class ApartmentBuilding(MyBaseModel):
-    name = CharField(_("Tên chung cư"), max_length=50)
-    address = CharField(_("Địa chỉ"), max_length=50)
-    owner = CharField(_("Chủ sở hữu"), max_length=50)
-    phone_number = CharField(
+    name = models.CharField(_("Tên chung cư"), max_length=50)
+    address = models.CharField(_("Địa chỉ"), max_length=50)
+    owner = models.CharField(_("Chủ sở hữu"), max_length=50)
+    phone_number = models.CharField(
         _("Số điện thoại"),
         max_length=11,
         validators=[MinLengthValidator(10)],
     )
-    built_date = DateField(_("Năm xây dựng"))
+    built_date = models.DateField(_("Năm xây dựng"))
 
     class Meta:
         verbose_name = _("Chung cư")
@@ -35,12 +26,12 @@ class ApartmentBuilding(MyBaseModel):
 
 
 class Building(MyBaseModel):
-    name = CharField(_("Tên tòa nhà"), max_length=10, primary_key=True)
-    number_of_floors = SmallIntegerField(
+    name = models.CharField(_("Tên tòa nhà"), max_length=10, primary_key=True)
+    number_of_floors = models.SmallIntegerField(
         _("Số tầng"), validators=[MinValueValidator(0)]
     )
-    apartment_building = ForeignKey(
-        verbose_name=_("Chung cư"), to=ApartmentBuilding, on_delete=CASCADE
+    apartment_building = models.ForeignKey(
+        verbose_name=_("Chung cư"), to=ApartmentBuilding, on_delete=models.CASCADE
     )
 
     class Meta:
@@ -52,19 +43,19 @@ class Building(MyBaseModel):
 
 
 class ApartmentType(MyBaseModel):
-    name = CharField(_("Tên loại căn hộ"), max_length=50)
-    width = SmallIntegerField(_("Chiều rộng"), validators=[MinValueValidator(0)])
-    height = SmallIntegerField(_("Chiều dài"), validators=[MinValueValidator(0)])
-    number_of_bedroom = SmallIntegerField(
+    name = models.CharField(_("Tên loại căn hộ"), max_length=50)
+    width = models.SmallIntegerField(_("Chiều rộng"), validators=[MinValueValidator(0)])
+    height = models.SmallIntegerField(_("Chiều dài"), validators=[MinValueValidator(0)])
+    number_of_bedroom = models.SmallIntegerField(
         _("Số phòng ngủ"), validators=[MinValueValidator(0)]
     )
-    number_of_living_room = SmallIntegerField(
+    number_of_living_room = models.SmallIntegerField(
         _("Số phòng khách"), validators=[MinValueValidator(0)]
     )
-    number_of_kitchen = SmallIntegerField(
+    number_of_kitchen = models.SmallIntegerField(
         _("Số phòng bếp"), validators=[MinValueValidator(0)]
     )
-    number_of_restroom = SmallIntegerField(
+    number_of_restroom = models.SmallIntegerField(
         _("Số nhà tắm"), validators=[MinValueValidator(0)]
     )
 
@@ -77,21 +68,26 @@ class ApartmentType(MyBaseModel):
 
 
 class Apartment(MyBaseModel):
-    class Status(TextChoices):
+    class Status(models.TextChoices):
         EMPTY = "EMPTY", _("Trống")
         INHABITED = "INHABITED", _("Có người ở")
         ABOUT_TO_MOVE = "ABOUT_TO_MOVE", _("Sắp chuyển đi")
 
-    room_number = CharField(_("Số phòng"), primary_key=True, max_length=20)
-    floor = SmallIntegerField(_("Tầng"), validators=[MinValueValidator(0)])
-    apartment_type = ForeignKey(
-        verbose_name=_("Loại căn hộ"), to=ApartmentType, on_delete=SET_NULL, null=True
+    room_number = models.CharField(_("Số phòng"), primary_key=True, max_length=20)
+    floor = models.SmallIntegerField(_("Tầng"), validators=[MinValueValidator(0)])
+    apartment_type = models.ForeignKey(
+        verbose_name=_("Loại căn hộ"),
+        to=ApartmentType,
+        on_delete=models.SET_NULL,
+        null=True,
     )
-    building = ForeignKey(verbose_name=_("Tòa"), to=Building, on_delete=CASCADE)
-    residents = ManyToManyField(
+    building = models.ForeignKey(
+        verbose_name=_("Tòa"), to=Building, on_delete=models.CASCADE
+    )
+    residents = models.ManyToManyField(
         verbose_name=_("Danh sách cư dân"), to=get_user_model(), blank=True
     )
-    status = CharField(
+    status = models.CharField(
         _("Trạng thái"), max_length=20, choices=Status, default=Status.EMPTY
     )
 
