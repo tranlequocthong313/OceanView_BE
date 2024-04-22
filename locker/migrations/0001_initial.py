@@ -15,7 +15,7 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.CreateModel(
-            name="Feedback",
+            name="Item",
             fields=[
                 (
                     "id",
@@ -34,34 +34,32 @@ class Migration(migrations.Migration):
                     "updated_date",
                     models.DateTimeField(auto_now=True, verbose_name="Ngày cập nhật"),
                 ),
-                ("title", models.CharField(max_length=100, verbose_name="Tiêu đề")),
-                ("content", models.TextField(max_length=500, verbose_name="Nội dung")),
-                (
-                    "type",
-                    models.CharField(
-                        choices=[
-                            ("QUESTION", "Thắc mắc"),
-                            ("COMPLAIN", "Phàn nàn"),
-                            ("SUPPORT", "Hỗ trợ"),
-                            ("OTHER", "Khác"),
-                        ],
-                        max_length=10,
-                        verbose_name="Loại",
-                    ),
-                ),
+                ("name", models.CharField(max_length=50, verbose_name="Tên")),
+                ("quantity", models.PositiveSmallIntegerField(verbose_name="Tên")),
                 (
                     "image",
                     cloudinary.models.CloudinaryField(
                         blank=True, max_length=255, null=True, verbose_name="Ảnh"
                     ),
                 ),
-                ("deleted", models.BooleanField(default=False, verbose_name="Đã xóa")),
                 (
-                    "author",
+                    "status",
+                    models.CharField(
+                        choices=[
+                            ("RECEIVED", "Đã nhận"),
+                            ("NOT_RECEIVED", "Chưa nhận"),
+                        ],
+                        default="NOT_RECEIVED",
+                        max_length=20,
+                        verbose_name="Trạng thái",
+                    ),
+                ),
+                (
+                    "user",
                     models.ForeignKey(
                         on_delete=django.db.models.deletion.CASCADE,
                         to=settings.AUTH_USER_MODEL,
-                        verbose_name="Tác giả",
+                        verbose_name="Cư dân",
                     ),
                 ),
             ],

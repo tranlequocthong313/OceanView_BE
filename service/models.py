@@ -89,7 +89,7 @@ class ServiceRegistration(MyBaseModel):
         verbose_name_plural = _("Đăng ký dịch vụ")
 
     def __str__(self) -> str:
-        return f"{self.personal_information} {self.service} - {self.get_status_label()}"
+        return f"{self.personal_information} {self.service}"
 
 
 class VehicleInformation(MyBaseModel):
