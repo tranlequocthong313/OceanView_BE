@@ -69,6 +69,14 @@ class ServiceRegistrationView(ViewSet):
                     **personal_information_data
                 )
                 log.info("Created new personal information")
+            else:
+                if personal_information.has_account():
+                    log.error(f"{personal_information} do not need an access card")
+                    return Response(
+                        "This person does not need an access card",
+                        status.HTTP_400_BAD_REQUEST,
+                    )
+
             relative = Relative.objects.filter(
                 personal_information__citizen_id=personal_information.citizen_id,
             ).first()
