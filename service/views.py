@@ -7,13 +7,10 @@ from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.generics import (
     DestroyAPIView,
-    GenericAPIView,
-    ListAPIView,
-    RetrieveAPIView,
 )
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.viewsets import ReadOnlyModelViewSet, ViewSet
+from rest_framework.viewsets import ReadOnlyModelViewSet
 
 from user.models import PersonalInformation
 from utils import get_logger
@@ -37,13 +34,28 @@ class ServiceRegistrationView(DestroyAPIView, ReadOnlyModelViewSet):
 
     def get_queryset(self):
         queryset = ServiceRegistration.objects.all()
+
         if self.action == "list":
+            category = self.request.query_params.get("category")
             status = self.request.query_params.get("status")
             exclude_status = self.request.query_params.get("_status")
+
+            categories = {
+                "access": queryset.filter(
+                    service__service_id=Service.ServiceType.ACCESS_CARD
+                ),
+                "parking": queryset.filter(
+                    service__service_id__in=Service.parking_services()
+                ),
+            }
+
+            if category is not None and category in categories:
+                queryset = categories[category]
             if status is not None:
                 queryset = queryset.filter(status=status)
             if exclude_status is not None and queryset:
                 queryset = queryset.exclude(status=exclude_status)
+
         return queryset
 
     def registered_service(self, service_id, citizen_id):
