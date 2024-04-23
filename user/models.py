@@ -2,6 +2,7 @@ from datetime import datetime
 
 from cloudinary.models import CloudinaryField
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
+from django.core.exceptions import ObjectDoesNotExist
 from django.core.validators import MinLengthValidator
 from django.db import models
 from django.utils.translation import gettext_lazy as _
@@ -52,6 +53,15 @@ class PersonalInformation(MyBaseModel):
             or data.get("phone_number") == self.phone_number
             or (self.email is not None and data.get("email") == self.email)
         )
+
+    @property
+    def is_relative(self):
+        result = False
+        try:
+            result = self.relative is not None
+        except ObjectDoesNotExist:
+            pass
+        return result
 
     def __str__(self) -> str:
         return f"{self.citizen_id} - {self.full_name}"
