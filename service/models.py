@@ -34,6 +34,14 @@ class Service(MyBaseModel):
         verbose_name = _("Dịch vụ")
         verbose_name_plural = _("Dịch vụ")
 
+    @classmethod
+    def parking_services(cls):
+        return [
+            Service.ServiceType.BYCYCLE_PARKING_CARD,
+            Service.ServiceType.MOTOR_PARKING_CARD,
+            Service.ServiceType.CAR_PARKING_CARD,
+        ]
+
     def __str__(self) -> str:
         return self.name
 

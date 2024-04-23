@@ -11,6 +11,18 @@ SERVICE_HISTORY = {
     "responses": {200: serializers.HistoryServiceRegistrationSerializer},
     "parameters": [
         OpenApiParameter(
+            name="category",
+            type=OpenApiTypes.STR,
+            location=OpenApiParameter.QUERY,
+            description="Include services belong to a specific category",
+            examples=[
+                OpenApiExample(
+                    "Example",
+                    value="access | parking",
+                ),
+            ],
+        ),
+        OpenApiParameter(
             name="status",
             type=OpenApiTypes.STR,
             location=OpenApiParameter.QUERY,
