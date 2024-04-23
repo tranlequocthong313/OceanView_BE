@@ -1,16 +1,46 @@
-from drf_spectacular.utils import OpenApiExample
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import OpenApiExample, OpenApiParameter
 
+from service import serializers
 from service.models import Service, ServiceRegistration, VehicleInformation
-from service.serializers import (
-    AccessCardServiceRegistrationSerializer,
-    ParkingCardServiceRegistrationSerializer,
-)
 from utils import format
+
+SERVICE_HISTORY = {
+    "description": "History of service registration",
+    "request": None,
+    "responses": {200: serializers.HistoryServiceRegistrationSerializer},
+    "parameters": [
+        OpenApiParameter(
+            name="status",
+            type=OpenApiTypes.STR,
+            location=OpenApiParameter.QUERY,
+            description="Include services with required status",
+            examples=[
+                OpenApiExample(
+                    "Example",
+                    value=format.format_enum_values(ServiceRegistration.Status),
+                ),
+            ],
+        ),
+        OpenApiParameter(
+            name="_status",
+            type=OpenApiTypes.STR,
+            location=OpenApiParameter.QUERY,
+            description="Exclude services with required status",
+            examples=[
+                OpenApiExample(
+                    "Example",
+                    value=format.format_enum_values(ServiceRegistration.Status),
+                ),
+            ],
+        ),
+    ],
+}
 
 SERVICE_ACCESS_CARD = {
     "description": "Register access card service",
-    "request": AccessCardServiceRegistrationSerializer,
-    "responses": {200: AccessCardServiceRegistrationSerializer},
+    "request": serializers.AccessCardServiceRegistrationSerializer,
+    "responses": {200: serializers.AccessCardServiceRegistrationSerializer},
     "examples": [
         OpenApiExample(
             "Example",
@@ -46,8 +76,8 @@ SERVICE_ACCESS_CARD = {
 
 SERVICE_PARKING_CARD = {
     "description": "Register parking card service",
-    "request": ParkingCardServiceRegistrationSerializer,
-    "responses": {200: ParkingCardServiceRegistrationSerializer},
+    "request": serializers.ParkingCardServiceRegistrationSerializer,
+    "responses": {200: serializers.ParkingCardServiceRegistrationSerializer},
     "examples": [
         OpenApiExample(
             "Example",

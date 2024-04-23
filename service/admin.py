@@ -23,6 +23,9 @@ class RelativeAdmin(MyBaseModelAdmin):
         "personal_information__email",
     )
 
+    def has_add_permission(self, request, obj=None):
+        return False
+
 
 admin.site.register(Relative, RelativeAdmin)
 
@@ -64,6 +67,9 @@ class ServiceRegistrationAdmin(MyBaseModelAdmin):
     )
     list_filter = ("status",)
 
+    def has_add_permission(self, request, obj=None):
+        return False
+
 
 class VehicleInformationAdmin(MyBaseModelAdmin):
     list_display = (
@@ -78,6 +84,9 @@ class VehicleInformationAdmin(MyBaseModelAdmin):
         "apartment__room_number",
     )
     list_filter = ("vehicle_type",)
+
+    def has_add_permission(self, request, obj=None):
+        return False
 
 
 admin_site.register(Relative, RelativeAdmin)

@@ -70,3 +70,43 @@ class ParkingCardServiceRegistrationSerializer(AccessCardServiceRegistrationSeri
             "room_number",
             "vehicle_information",
         ]
+
+
+class HistoryServiceRegistrationSerializer(serializers.ModelSerializer):
+    service = ServiceSerializer()
+
+    class Meta:
+        model = models.ServiceRegistration
+        fields = ["id", "service", "status", "created_date", "updated_date"]
+        read_only_fields = ["id", "service", "status", "created_date", "updated_date"]
+
+
+class DetailHistoryServiceRegistrationSerializer(
+    HistoryServiceRegistrationSerializer, ParkingCardServiceRegistrationSerializer
+):
+    relative = RelativeSerializer(read_only=True, required=False)
+    vehicle_information = VehicleInformationSerializer(read_only=True, required=False)
+    room_number = serializers.CharField(read_only=True, required=False)
+
+    class Meta:
+        model = models.ServiceRegistration
+        fields = (
+            ParkingCardServiceRegistrationSerializer.Meta.fields
+            + HistoryServiceRegistrationSerializer.Meta.fields
+        )
+
+    def to_representation(self, instance):
+        rep = super().to_representation(instance)
+        relative = models.Relative.objects.filter(
+            personal_information=instance.personal_information
+        ).first()
+        if relative:
+            rep["relative"] = RelativeSerializer(relative).data
+        vehicle_information = models.VehicleInformation.objects.filter(
+            service_registration=instance
+        ).first()
+        if vehicle_information:
+            rep["vehicle_information"] = VehicleInformationSerializer(
+                vehicle_information
+            ).data
+        return rep

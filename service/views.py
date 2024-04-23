@@ -5,9 +5,15 @@ from django.db.models.query import Q
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.decorators import action
+from rest_framework.generics import (
+    DestroyAPIView,
+    GenericAPIView,
+    ListAPIView,
+    RetrieveAPIView,
+)
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.viewsets import ViewSet
+from rest_framework.viewsets import ReadOnlyModelViewSet, ViewSet
 
 from user.models import PersonalInformation
 from utils import get_logger
@@ -18,10 +24,9 @@ from .models import Relative, Service, ServiceRegistration, VehicleInformation
 log = get_logger(__name__)
 
 
-class ServiceRegistrationView(ViewSet):
+class ServiceRegistrationView(DestroyAPIView, ReadOnlyModelViewSet):
     serializer_class = serializers.AccessCardServiceRegistrationSerializer
     permission_classes = [IsAuthenticated]
-
     # You can save the policy on the number of vehicles for each
     # apartment in the database with a separate model
     max_vehicle_counts = {
@@ -31,12 +36,43 @@ class ServiceRegistrationView(ViewSet):
     }
 
     def get_queryset(self):
-        return ServiceRegistration.objects.all()
+        queryset = ServiceRegistration.objects.all()
+        if self.action == "list":
+            status = self.request.query_params.get("status")
+            exclude_status = self.request.query_params.get("_status")
+            if status is not None:
+                queryset = queryset.filter(status=status)
+            if exclude_status is not None and queryset:
+                queryset = queryset.exclude(status=exclude_status)
+        return queryset
 
     def registered_service(self, service_id, citizen_id):
         return ServiceRegistration.objects.filter(
             service_id=service_id, personal_information__citizen_id=citizen_id
         ).exists()
+
+    def get_serializer_class(self):
+        if self.action in ["list", "retrieve"]:
+            if self.action == "list":
+                return serializers.HistoryServiceRegistrationSerializer
+            return serializers.DetailHistoryServiceRegistrationSerializer
+        return super().get_serializer_class()
+
+    @extend_schema(**swaggers.SERVICE_HISTORY)
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if instance.is_canceled:
+            log.error(f"{instance} has been canceled already")
+            return Response(
+                "This service has been canceled already",
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        instance.cancel()
+        log.info(f"{instance} is canceled successfully")
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
     @extend_schema(**swaggers.SERVICE_ACCESS_CARD)
     @action(

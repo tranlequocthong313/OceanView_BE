@@ -63,6 +63,7 @@ class ServiceRegistration(MyBaseModel):
     class Status(models.TextChoices):
         WAITING_FOR_APPROVAL = "WAITING_FOR_APPROVAL", _("Chờ được xét duyệt")
         APPROVED = "APPROVED", _("Đã được duyệt")
+        CANCELED = "CANCELED", _("Đã hủy")
 
     service = models.ForeignKey(
         verbose_name=_("Dịch vụ"),
@@ -87,6 +88,15 @@ class ServiceRegistration(MyBaseModel):
     class Meta:
         verbose_name = _("Đăng ký dịch vụ")
         verbose_name_plural = _("Đăng ký dịch vụ")
+
+    def cancel(self):
+        self.status = ServiceRegistration.Status.CANCELED
+        self.save()
+        return True
+
+    @property
+    def is_canceled(self):
+        return self.status == ServiceRegistration.Status.CANCELED
 
     def __str__(self) -> str:
         return f"{self.personal_information} {self.service}"

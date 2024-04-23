@@ -18,5 +18,8 @@ class FeedbackAdmin(admin.ModelAdmin):
     ]
     readonly_fields = ["image"]
 
+    def has_add_permission(self, request, obj=None):
+        return False
+
 
 admin_site.register(models.Feedback, FeedbackAdmin)
