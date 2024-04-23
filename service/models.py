@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ObjectDoesNotExist
 from django.core.validators import MinLengthValidator, MinValueValidator
 from django.db import models
 from django.utils.translation import gettext_lazy as _
@@ -106,11 +107,24 @@ class ServiceRegistration(MyBaseModel):
     def is_canceled(self):
         return self.status == ServiceRegistration.Status.CANCELED
 
+    @property
+    def has_vehicle(self):
+        result = False
+        try:
+            result = self.vehicle is not None
+        except ObjectDoesNotExist:
+            pass
+        return result
+
+    @property
+    def for_relative(self):
+        return self.personal_information.is_relative
+
     def __str__(self) -> str:
         return f"{self.personal_information} {self.service}"
 
 
-class VehicleInformation(MyBaseModel):
+class Vehicle(MyBaseModel):
     class VehicleType(models.TextChoices):
         BYCYCLE = "BYCYCLE", _("Xe đạp")
         MOTORBIKE = "MOTORBIKE", _("Xe máy")
@@ -137,15 +151,15 @@ class VehicleInformation(MyBaseModel):
     )
 
     class Meta:
-        verbose_name = _("Thông tin phương tiện")
-        verbose_name_plural = _("Thông tin phương tiện")
+        verbose_name = _("Phương tiện")
+        verbose_name_plural = _("Phương tiện")
 
     @classmethod
     def get_vehicle_type_label(cls, vehicle_type):
         return dict(cls.VehicleType.choices)[vehicle_type]
 
     def __str__(self) -> str:
-        return f"{self.apartment} - {VehicleInformation.get_vehicle_type_label(self.vehicle_type)} - {self.license_plate if self.license_plate else ''}"
+        return f"{self.apartment} - {Vehicle.get_vehicle_type_label(self.vehicle_type)} - {self.license_plate if self.license_plate else ''}"
 
     @classmethod
     def get_service_id(cls, vehicle_type):

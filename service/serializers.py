@@ -12,30 +12,24 @@ class ServiceSerializer(serializers.ModelSerializer):
         read_only_fields = ["service_id", "name", "price"]
 
 
-class VehicleInformationSerializer(serializers.ModelSerializer):
+class VehicleSerializer(serializers.ModelSerializer):
     class Meta:
-        model = models.VehicleInformation
+        model = models.Vehicle
         fields = ["license_plate", "vehicle_type"]
 
     def validate(self, attrs):
         vehicle_type = attrs.get("vehicle_type")
         license_plate = attrs.get("license_plate")
 
-        if (
-            vehicle_type == models.VehicleInformation.VehicleType.BYCYCLE
-            and license_plate
-        ):
+        if vehicle_type == models.Vehicle.VehicleType.BYCYCLE and license_plate:
             raise serializers.ValidationError(
                 {"license_plate": "Bicycles do not have license plates"}
             )
 
-        if (
-            vehicle_type != models.VehicleInformation.VehicleType.BYCYCLE
-            and not license_plate
-        ):
+        if vehicle_type != models.Vehicle.VehicleType.BYCYCLE and not license_plate:
             raise serializers.ValidationError(
                 {
-                    "license_plate": f"{models.VehicleInformation.get_vehicle_type_label(vehicle_type)} need license plates"
+                    "license_plate": f"{models.Vehicle.get_vehicle_type_label(vehicle_type)} need license plates"
                 }
             )
 
@@ -61,14 +55,14 @@ class AccessCardServiceRegistrationSerializer(serializers.ModelSerializer):
 
 
 class ParkingCardServiceRegistrationSerializer(AccessCardServiceRegistrationSerializer):
-    vehicle_information = VehicleInformationSerializer(write_only=True)
+    vehicle = VehicleSerializer(write_only=True)
     room_number = serializers.CharField(write_only=True)
 
     class Meta:
-        model = models.VehicleInformation
+        model = models.Vehicle
         fields = AccessCardServiceRegistrationSerializer.Meta.fields + [
             "room_number",
-            "vehicle_information",
+            "vehicle",
         ]
 
 
@@ -85,8 +79,7 @@ class DetailHistoryServiceRegistrationSerializer(
     HistoryServiceRegistrationSerializer, ParkingCardServiceRegistrationSerializer
 ):
     relative = RelativeSerializer(read_only=True, required=False)
-    vehicle_information = VehicleInformationSerializer(read_only=True, required=False)
-    room_number = serializers.CharField(read_only=True, required=False)
+    vehicle = VehicleSerializer(read_only=True, required=False)
 
     class Meta:
         model = models.ServiceRegistration
@@ -97,16 +90,10 @@ class DetailHistoryServiceRegistrationSerializer(
 
     def to_representation(self, instance):
         rep = super().to_representation(instance)
-        relative = models.Relative.objects.filter(
-            personal_information=instance.personal_information
-        ).first()
-        if relative:
-            rep["relative"] = RelativeSerializer(relative).data
-        vehicle_information = models.VehicleInformation.objects.filter(
-            service_registration=instance
-        ).first()
-        if vehicle_information:
-            rep["vehicle_information"] = VehicleInformationSerializer(
-                vehicle_information
+        if instance.for_relative:
+            rep["relative"] = RelativeSerializer(
+                instance.personal_information.relative
             ).data
+        if instance.has_vehicle:
+            rep["vehicle"] = VehicleSerializer(instance.vehicle).data
         return rep

@@ -8,7 +8,7 @@ from .models import (
     Relative,
     Service,
     ServiceRegistration,
-    VehicleInformation,
+    Vehicle,
 )
 
 
@@ -71,7 +71,7 @@ class ServiceRegistrationAdmin(MyBaseModelAdmin):
         return False
 
 
-class VehicleInformationAdmin(MyBaseModelAdmin):
+class VehicleAdmin(MyBaseModelAdmin):
     list_display = (
         "id",
         "license_plate",
@@ -90,6 +90,6 @@ class VehicleInformationAdmin(MyBaseModelAdmin):
 
 
 admin_site.register(Relative, RelativeAdmin)
-admin_site.register(VehicleInformation, VehicleInformationAdmin)
+admin_site.register(Vehicle, VehicleAdmin)
 admin_site.register(Service, ServiceAdmin)
 admin_site.register(ServiceRegistration, ServiceRegistrationAdmin)

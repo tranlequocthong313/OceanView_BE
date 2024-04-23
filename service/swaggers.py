@@ -2,7 +2,7 @@ from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiExample, OpenApiParameter
 
 from service import serializers
-from service.models import Service, ServiceRegistration, VehicleInformation
+from service.models import Service, ServiceRegistration, Vehicle
 from utils import format
 
 SERVICE_HISTORY = {
@@ -106,11 +106,9 @@ SERVICE_PARKING_CARD = {
                     },
                 },
                 "room_number": "A-303",
-                "vehicle_information": {
+                "vehicle": {
                     "license_plate": "30A91632",
-                    "vehicle_type": format.format_enum_values(
-                        VehicleInformation.VehicleType
-                    ),
+                    "vehicle_type": format.format_enum_values(Vehicle.VehicleType),
                 },
             },
             request_only=True,

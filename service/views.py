@@ -16,7 +16,7 @@ from user.models import PersonalInformation
 from utils import get_logger
 
 from . import serializers, swaggers
-from .models import Relative, Service, ServiceRegistration, VehicleInformation
+from .models import Relative, Service, ServiceRegistration, Vehicle
 
 log = get_logger(__name__)
 
@@ -27,13 +27,13 @@ class ServiceRegistrationView(DestroyAPIView, ReadOnlyModelViewSet):
     # You can save the policy on the number of vehicles for each
     # apartment in the database with a separate model
     max_vehicle_counts = {
-        VehicleInformation.VehicleType.BYCYCLE: 2,
-        VehicleInformation.VehicleType.MOTORBIKE: 2,
-        VehicleInformation.VehicleType.CAR: 1,
+        Vehicle.VehicleType.BYCYCLE: 2,
+        Vehicle.VehicleType.MOTORBIKE: 2,
+        Vehicle.VehicleType.CAR: 1,
     }
 
     def get_queryset(self):
-        queryset = ServiceRegistration.objects.all()
+        queryset = ServiceRegistration.objects.filter(resident=self.request.user).all()
 
         if self.action == "list":
             category = self.request.query_params.get("category")
@@ -160,7 +160,7 @@ class ServiceRegistrationView(DestroyAPIView, ReadOnlyModelViewSet):
             )
 
     def is_valid_vehicle_limit(self, apartment_id, vehicle_type):
-        vehicle_count = VehicleInformation.objects.filter(
+        vehicle_count = Vehicle.objects.filter(
             apartment_id=apartment_id, vehicle_type=vehicle_type
         ).count()
 
@@ -199,16 +199,16 @@ class ServiceRegistrationView(DestroyAPIView, ReadOnlyModelViewSet):
 
             log.info(f"{request.user}'s room is {room_number}")
             # 2 motors, 2 bikes and 1 car per apartment
-            vehicle_information = serializer.validated_data["vehicle_information"]
+            vehicle = serializer.validated_data["vehicle"]
             if not self.is_valid_vehicle_limit(
                 apartment_id=room_number,
-                vehicle_type=vehicle_information["vehicle_type"],
+                vehicle_type=vehicle["vehicle_type"],
             ):
                 log.error(
-                    f"{room_number} can't have more {VehicleInformation.get_vehicle_type_label(vehicle_information['vehicle_type'])}"
+                    f"{room_number} can't have more {Vehicle.get_vehicle_type_label(vehicle['vehicle_type'])}"
                 )
                 return Response(
-                    f"The apartment's limit of {self.max_vehicle_counts[vehicle_information['vehicle_type']]} {VehicleInformation.get_vehicle_type_label(vehicle_information['vehicle_type'])} has been reached",
+                    f"The apartment's limit of {self.max_vehicle_counts[vehicle['vehicle_type']]} {Vehicle.get_vehicle_type_label(vehicle['vehicle_type'])} has been reached",
                     status.HTTP_403_FORBIDDEN,
                 )
 
@@ -217,17 +217,15 @@ class ServiceRegistrationView(DestroyAPIView, ReadOnlyModelViewSet):
 
             if request.user.is_same_person(personal_information_data):
                 log.debug(f"Registering for current resident {request.user}...")
-                service_id = VehicleInformation.get_service_id(
-                    vehicle_information["vehicle_type"]
-                )
+                service_id = Vehicle.get_service_id(vehicle["vehicle_type"])
                 service_registration = ServiceRegistration.objects.create(
                     service_id=service_id,
                     personal_information=request.user.personal_information,
                     resident=request.user,
                 )
-                VehicleInformation.objects.create(
-                    license_plate=vehicle_information["license_plate"],
-                    vehicle_type=vehicle_information["vehicle_type"],
+                Vehicle.objects.create(
+                    license_plate=vehicle["license_plate"],
+                    vehicle_type=vehicle["vehicle_type"],
                     service_registration=service_registration,
                     apartment_id=room_number,
                 )
@@ -257,17 +255,15 @@ class ServiceRegistrationView(DestroyAPIView, ReadOnlyModelViewSet):
                 relative.residents.add(request.user)
                 log.info(f"Added {request.user} to {relative}'s relatives")
 
-                service_id = VehicleInformation.get_service_id(
-                    vehicle_information["vehicle_type"]
-                )
+                service_id = Vehicle.get_service_id(vehicle["vehicle_type"])
                 service_registration = ServiceRegistration.objects.create(
                     service_id=service_id,
                     personal_information=personal_information,
                     resident=request.user,
                 )
-                VehicleInformation.objects.create(
-                    license_plate=vehicle_information["license_plate"],
-                    vehicle_type=vehicle_information["vehicle_type"],
+                Vehicle.objects.create(
+                    license_plate=vehicle["license_plate"],
+                    vehicle_type=vehicle["vehicle_type"],
                     service_registration=service_registration,
                     apartment_id=room_number,
                 )
