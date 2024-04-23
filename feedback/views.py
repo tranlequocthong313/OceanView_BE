@@ -13,12 +13,12 @@ class FeedbackView(ModelViewSet):
     http_method_names = ["get", "post", "patch", "delete"]
 
     def get_queryset(self):
-        queries = models.Feedback.objects.filter(deleted=False)
+        queries = models.Feedback.objects.filter(deleted=False).all()
         q = self.request.query_params.get("q")
         if q:
             queries = queries.filter(title__icontains=q)
 
-        return queries.all()
+        return queries
 
     def get_serializer(self, *args, **kwargs):
         kwargs["context"] = {"user": self.request.user}
