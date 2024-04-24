@@ -1,6 +1,7 @@
 import logging
 
 from django.db.models import Q
+from drf_spectacular.utils import extend_schema
 from rest_framework.generics import (
     CreateAPIView,
     ListAPIView,
@@ -9,7 +10,7 @@ from rest_framework.generics import (
 from rest_framework.permissions import IsAdminUser
 from rest_framework.viewsets import ReadOnlyModelViewSet, ViewSet
 
-from . import serializers
+from . import serializers, swaggers
 from .models import Item, Locker
 
 log = logging.getLogger(__name__)
@@ -38,6 +39,10 @@ class LockerView(ListAPIView, ViewSet):
             return serializers.LockerSerializer
         return super().get_serializer_class()
 
+    @extend_schema(**swaggers.LOCKER_LIST)
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
 
 class ItemView(UpdateAPIView, CreateAPIView, ReadOnlyModelViewSet):
     serializer_class = serializers.ItemSerializer
@@ -64,3 +69,7 @@ class ItemView(UpdateAPIView, CreateAPIView, ReadOnlyModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(locker_id=self.kwargs["locker_id"])
+
+    @extend_schema(**swaggers.ITEM_LIST)
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
