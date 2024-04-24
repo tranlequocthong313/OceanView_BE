@@ -1,3 +1,5 @@
+import contextlib
+
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.validators import MinLengthValidator, MinValueValidator
@@ -110,10 +112,8 @@ class ServiceRegistration(MyBaseModel):
     @property
     def has_vehicle(self):
         result = False
-        try:
+        with contextlib.suppress(ObjectDoesNotExist):
             result = self.vehicle is not None
-        except ObjectDoesNotExist:
-            pass
         return result
 
     @property
@@ -159,7 +159,7 @@ class Vehicle(MyBaseModel):
         return dict(cls.VehicleType.choices)[vehicle_type]
 
     def __str__(self) -> str:
-        return f"{self.apartment} - {Vehicle.get_vehicle_type_label(self.vehicle_type)} - {self.license_plate if self.license_plate else ''}"
+        return f"{self.apartment} - {Vehicle.get_vehicle_type_label(self.vehicle_type)} - {self.license_plate or ''}"
 
     @classmethod
     def get_service_id(cls, vehicle_type):

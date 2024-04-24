@@ -32,6 +32,22 @@ class Locker(MyBaseModel):
         return self.owner.__str__()
 
 
+"""
+A signal receiver function to create a locker for a user after the user is created.
+
+This function listens for the post-save signal of the User model and creates a Locker instance for the newly created user.
+
+Args:
+    sender: The sender of the signal.
+    instance: The instance of the User model being saved.
+    created (bool): A flag indicating if the instance was created.
+    **kwargs: Additional keyword arguments.
+
+Returns:
+    None
+"""
+
+
 @receiver(post_save, sender=get_user_model())
 def create_locker(sender, instance, created, **kwargs):
     if created:
@@ -64,6 +80,21 @@ class Item(MyBaseModel):
 
     def __str__(self) -> str:
         return self.name
+
+
+"""
+A signal receiver function to update the status of a locker based on item changes.
+
+This function listens for post-save and post-delete signals of the Item model and updates the status of the associated locker accordingly.
+
+Args:
+    sender: The sender of the signal.
+    instance: The instance of the Item model triggering the signal.
+    **kwargs: Additional keyword arguments.
+
+Returns:
+    None
+"""
 
 
 @receiver(post_save, sender=Item)

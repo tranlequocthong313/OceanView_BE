@@ -170,7 +170,7 @@ class UserView(ViewSet, GenericAPIView):
                 .first()
             )
             if user is None:
-                log.error(f"User does not exist for reset password")
+                log.error("User does not exist for reset password")
                 return Response(
                     "User does not exist",
                     status=status.HTTP_404_NOT_FOUND,
@@ -208,7 +208,7 @@ class UserView(ViewSet, GenericAPIView):
         )
 
         if user is None:
-            log.error(f"User does not exist for sending reset password link")
+            log.error("User does not exist for sending reset password link")
             return Response(
                 "User does not exist",
                 status=status.HTTP_404_NOT_FOUND,
@@ -230,7 +230,7 @@ class UserView(ViewSet, GenericAPIView):
                 user=user,
                 link=f"{settings.HOST}/users/password/?token={reset_password_token}",
             )
-            log.info(f"Sent reset password link")
+            log.info("Sent reset password link")
             return Response(
                 "Sent reset password link",
                 status=status.HTTP_200_OK,
@@ -265,7 +265,7 @@ class UserView(ViewSet, GenericAPIView):
             )
 
             if user is None:
-                log.error(f"User does not exist for sending otp")
+                log.error("User does not exist for sending otp")
                 return Response(
                     "User does not exist",
                     status=status.HTTP_404_NOT_FOUND,
@@ -310,7 +310,7 @@ class UserView(ViewSet, GenericAPIView):
                 .first()
             )
             if user is None:
-                log.error(f"User does not exist")
+                log.error("User does not exist")
                 return Response(
                     "User does not exist",
                     status=status.HTTP_404_NOT_FOUND,
@@ -347,7 +347,7 @@ class UserView(ViewSet, GenericAPIView):
 
     def validate_reset_password_token(self, reset_password_token):
         if not reset_password_token:
-            log.error(f"User does not provide token")
+            log.error("User does not provide token")
             return False, Response(status=status.HTTP_400_BAD_REQUEST)
 
         payload = token.verify_token(
@@ -355,20 +355,20 @@ class UserView(ViewSet, GenericAPIView):
             max_age=settings.RESET_PASSWORD_TOKEN_EXPIRE_TIME,
         )
         if not payload:
-            log.error(f"Token is invalid or expired")
+            log.error("Token is invalid or expired")
             return False, Response(status=status.HTTP_401_UNAUTHORIZED)
 
         cached_token = cache.get(f"{payload}")
         if cached_token is False:
-            log.error(f"Token does not exist in cache")
+            log.error("Token does not exist in cache")
             return False, Response(status=status.HTTP_401_UNAUTHORIZED)
 
         hashed_token = hashlib.md5(str(reset_password_token).encode()).hexdigest()
         if hashed_token != cached_token:
-            log.error(f"Token in cache not same as user token")
+            log.error("Token in cache not same as user token")
             return False, Response(status=status.HTTP_401_UNAUTHORIZED)
 
-        log.info(f"Token is valid")
+        log.info("Token is valid")
         return True, payload
 
     @extend_schema(**swaggers.USER_RESET_PASSWORD_GET)
@@ -428,9 +428,9 @@ class UserView(ViewSet, GenericAPIView):
         user = self.get_queryset().get(pk=resident_id)
         user.change_password(password)
         cache.delete(f"{resident_id}")
-        log.info(f"Updated password")
+        log.info("Updated password")
         self.send_reset_password_confirm_mail(user)
-        log.info(f"Reset password successfully")
+        log.info("Reset password successfully")
         return Response("Reset password successfully", status=status.HTTP_200_OK)
 
     def send_reset_password_confirm_mail(self, user):

@@ -13,8 +13,7 @@ class InvoiceView(ListAPIView, RetrieveAPIView, ViewSet):
     def get_queryset(self):
         queries = self.queryset
 
-        q = self.request.query_params.get("q")
-        if q:
+        if q := self.request.query_params.get("q"):
             queries = queries.filter(id__icontains=q)
 
         return queries

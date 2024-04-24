@@ -1,16 +1,17 @@
-import logging
+"""
+Get the client's IP address from the request object.
 
-from rest_framework import status
-from rest_framework.response import Response
+Args:
+    request: The request object containing client information.
+
+Returns:
+    str: The client's IP address extracted from the request.
+"""
 
 
 def get_client_ip(request):
-    x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
-    if x_forwarded_for:
-        ip = x_forwarded_for.split(",")[0]
-    else:
-        ip = request.META.get("REMOTE_ADDR")
-    return ip
-
-
-log = logging.getLogger(__name__)
+    return (
+        x_forwarded_for.split(",")[0]
+        if (x_forwarded_for := request.META.get("HTTP_X_FORWARDED_FOR"))
+        else request.META.get("REMOTE_ADDR")
+    )
