@@ -64,9 +64,9 @@ class ServiceRegistrationView(DestroyAPIView, ReadOnlyModelViewSet):
         ).exists()
 
     def get_serializer_class(self):
-        if self.action in ["list", "retrieve"]:
-            if self.action == "list":
-                return serializers.HistoryServiceRegistrationSerializer
+        if self.action == "list":
+            return serializers.HistoryServiceRegistrationSerializer
+        elif self.action == "retrieve":
             return serializers.DetailHistoryServiceRegistrationSerializer
         return super().get_serializer_class()
 
@@ -117,13 +117,12 @@ class ServiceRegistrationView(DestroyAPIView, ReadOnlyModelViewSet):
                     **personal_information_data
                 )
                 log.info("Created new personal information")
-            else:
-                if personal_information.has_account():
-                    log.error(f"{personal_information} do not need an access card")
-                    return Response(
-                        "This person does not need an access card",
-                        status.HTTP_400_BAD_REQUEST,
-                    )
+            elif personal_information.has_account():
+                log.error(f"{personal_information} do not need an access card")
+                return Response(
+                    "This person does not need an access card",
+                    status.HTTP_400_BAD_REQUEST,
+                )
 
             relative = Relative.objects.filter(
                 personal_information__citizen_id=personal_information.citizen_id,
@@ -164,10 +163,7 @@ class ServiceRegistrationView(DestroyAPIView, ReadOnlyModelViewSet):
             apartment_id=apartment_id, vehicle_type=vehicle_type
         ).count()
 
-        if vehicle_count >= self.max_vehicle_counts[vehicle_type]:
-            return False
-        else:
-            return True
+        return vehicle_count < self.max_vehicle_counts[vehicle_type]
 
     @extend_schema(**swaggers.SERVICE_PARKING_CARD)
     @action(
@@ -230,7 +226,6 @@ class ServiceRegistrationView(DestroyAPIView, ReadOnlyModelViewSet):
                     apartment_id=room_number,
                 )
                 log.info(f"Registered {request.user} successfully")
-                return Response(self.serializer_class(service_registration).data)
             else:
                 log.debug("Register for relatives...")
                 personal_information = PersonalInformation.objects.filter(
@@ -268,7 +263,7 @@ class ServiceRegistrationView(DestroyAPIView, ReadOnlyModelViewSet):
                     apartment_id=room_number,
                 )
                 log.info(f"Registered for {relative} successfully")
-                return Response(self.serializer_class(service_registration).data)
+            return Response(self.serializer_class(service_registration).data)
         except Exception:
             log.error("Server error", traceback.format_exc())
             return Response(

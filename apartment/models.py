@@ -103,9 +103,20 @@ class Apartment(MyBaseModel):
         verbose_name = _("Căn hộ")
         verbose_name_plural = _("Căn hộ")
 
+    """
+    Generate a unique room number based on the building name, floor, and room number.
+
+    Args:
+        building_name (str): The name of the building.
+        floor (int): The floor number of the room.
+        room_number (str): The room number within the floor.
+
+    Returns:
+        str: The generated unique room number.
+    """
+
     @classmethod
     def generate_room_number(cls, building_name, floor, room_number):
-        # Construct room number using building name and floor
         room_number = f"{building_name}-{floor}{int(room_number):02d}"
         return room_number
 

@@ -13,6 +13,19 @@ from invoice.models import InvoiceType
 from service.models import Service
 from user.models import PersonalInformation, User
 
+"""
+A management command to create default data for various models in the application.
+
+This command creates default data for models such as User, PersonalInformation, InvoiceType, Service, ApartmentBuilding, Building, ApartmentType, Apartment, and OAuth2 Application.
+
+Args:
+    *args: Additional positional arguments.
+    **kwargs: Additional keyword arguments.
+
+Returns:
+    None
+"""
+
 
 class Command(BaseCommand):
     help = "Create default data for models"

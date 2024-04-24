@@ -1,3 +1,4 @@
+import contextlib
 from datetime import datetime
 
 from cloudinary.models import CloudinaryField
@@ -57,10 +58,8 @@ class PersonalInformation(MyBaseModel):
     @property
     def is_relative(self):
         result = False
-        try:
+        with contextlib.suppress(ObjectDoesNotExist):
             result = self.relative is not None
-        except ObjectDoesNotExist:
-            pass
         return result
 
     def __str__(self) -> str:
@@ -125,14 +124,19 @@ class User(AbstractBaseUser, PermissionsMixin):
         verbose_name = _("Người dùng")
         verbose_name_plural = _("Người dùng")
 
+    """
+    Generate a unique resident ID based on the year and a unique number.
+
+    Args:
+        year (int): The year to be used in the resident ID generation.
+        unique_number (int): The unique number to be included in the resident ID.
+
+    Returns:
+        str: The generated resident ID.
+    """
+
     @classmethod
     def __generate_resident_id(cls, year, unique_number):
-        """
-        Combine last 2 digits of a year and a unique number
-        Ex: Year = 2024, Unique_number = 25
-        => Resident Id = 240025
-        It can only provide ids for 9999 residents per year for the app context
-        """
         return f"{year % 100:02d}{unique_number:04d}"
 
     @classmethod

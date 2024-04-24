@@ -168,9 +168,8 @@ class PersonalInformationAdmin(MyBaseModelAdmin):
             except OverflowError as err:
                 log.error(traceback.format_exc())
                 messages.add_message(request, messages.ERROR, err)
-            except SMTPAuthenticationError:
+            except SMTPAuthenticationError as e:
                 log.error(traceback.format_exc())
-                raise Exception()
             except SMTPException:
                 log.error(traceback.format_exc())
             return False
@@ -182,8 +181,7 @@ class PersonalInformationAdmin(MyBaseModelAdmin):
 
     def inform_issue_account_status(self, request, personal_information):
         try:
-            success = self.issue_account(request, personal_information)
-            if success:
+            if self.issue_account(request, personal_information):
                 messages.add_message(
                     request,
                     messages.SUCCESS,

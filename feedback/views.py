@@ -14,8 +14,7 @@ class FeedbackView(ModelViewSet):
 
     def get_queryset(self):
         queries = models.Feedback.objects.filter(deleted=False).all()
-        q = self.request.query_params.get("q")
-        if q:
+        if q := self.request.query_params.get("q"):
             queries = queries.filter(title__icontains=q)
 
         return queries

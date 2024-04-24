@@ -168,3 +168,5 @@ mysql
 .ruff_cache
 
 /tmp/redis.db
+
+secrets

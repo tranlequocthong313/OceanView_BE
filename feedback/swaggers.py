@@ -1,9 +1,6 @@
-from drf_spectacular.types import OpenApiTypes
-from drf_spectacular.utils import OpenApiExample, OpenApiParameter
+from drf_spectacular.utils import OpenApiExample
 
-from utils import format
-
-from . import models, serializers
+from . import serializers
 
 INVOICE = {
     "request": serializers.FeedbackSerializer,

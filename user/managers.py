@@ -5,17 +5,22 @@ from django.utils.translation import gettext_lazy as _
 
 log = logging.getLogger(__name__)
 
+"""
+A custom user manager class for creating superusers with foreign key relationships.
+
+This manager creates superusers with specific attributes and ensures that is_staff and is_superuser are set to True.
+
+Args:
+    password (str): The password for the superuser.
+    **extra_fields: Additional fields to set for the superuser.
+
+Returns:
+    User: The created superuser instance.
+"""
+
 
 class CustomUserWithForeignKeyManager(BaseUserManager):
-    """
-    Custom user model manager where resident_id is the unique identifiers
-    for authentication instead of usernames.
-    """
-
     def create_superuser(self, password=None, **extra_fields):
-        """
-        Create and save a SuperUser with the given resident_id and password.
-        """
         extra_fields.setdefault("is_staff", True)
         extra_fields.setdefault("is_superuser", True)
 

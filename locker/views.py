@@ -24,8 +24,7 @@ class LockerView(ListAPIView, ViewSet):
     def get_queryset(self):
         queryset = Locker.objects.all()
         if self.action == "list":
-            q = self.request.query_params.get("q")
-            if q:
+            if q := self.request.query_params.get("q"):
                 queryset = queryset.filter(
                     Q(owner__resident_id=q)
                     | Q(owner__personal_information__citizen_id__icontains=q)

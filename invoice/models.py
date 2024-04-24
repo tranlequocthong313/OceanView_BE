@@ -82,11 +82,25 @@ class InvoiceDetail(MyBaseModel):
         return f"{self.id}"
 
 
+"""
+A signal receiver function to generate an invoice ID before saving the Invoice instance.
+
+This function listens for the pre-save signal of the Invoice model and generates a unique invoice ID if it does not already exist.
+
+Args:
+    sender: The sender of the signal.
+    instance: The instance of the Invoice model being saved.
+    **kwargs: Additional keyword arguments.
+
+Returns:
+    None
+"""
+
+
 @receiver(pre_save, sender=Invoice)
 def generate_invoice_id(sender, instance, **kwargs):
     if not instance.id:
-        latest_invoice = Invoice.objects.order_by("-id").first()
-        if latest_invoice:
+        if latest_invoice := Invoice.objects.order_by("-id").first():
             last_invoice_number = int(latest_invoice.id[3:])
             new_invoice_number = last_invoice_number + 1
         else:
