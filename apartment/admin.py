@@ -1,10 +1,9 @@
-import logging
-
 from app.admin import MyBaseModelAdmin, admin_site
+from utils import get_logger
 
 from . import models
 
-log = logging.getLogger(__name__)
+log = get_logger(__name__)
 
 
 class ApartmentBuildingAdmin(MyBaseModelAdmin):

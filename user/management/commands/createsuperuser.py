@@ -1,5 +1,4 @@
 import getpass
-import logging
 import traceback
 
 import colorama
@@ -11,8 +10,9 @@ from django.core import exceptions
 from django.db import transaction
 
 from user.models import PersonalInformation
+from utils import get_logger
 
-log = logging.getLogger(__name__)
+log = get_logger(__name__)
 colorama.init(autoreset=True)
 
 """
@@ -66,11 +66,9 @@ class Command(createsuperuser.Command):
 
             if password != password2:
                 self.stderr.write("Error: Your passwords didn't match.")
-                # Don't validate passwords that don't match.
                 continue
             if password.strip() == "":
                 self.stderr.write("Error: Blank passwords aren't allowed.")
-                # Don't validate blank passwords.
                 continue
             try:
                 validate_password(password2, self.UserModel(**user_data))

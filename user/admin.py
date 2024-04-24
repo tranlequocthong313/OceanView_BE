@@ -1,4 +1,3 @@
-import logging
 import traceback
 from smtplib import SMTPAuthenticationError, SMTPException
 
@@ -9,12 +8,13 @@ from django.http import HttpResponseRedirect
 from django.utils.html import mark_safe
 
 from app.admin import MyBaseModelAdmin, admin_site
+from utils import get_logger
 from utils.email import send_mail
 from utils.sms import send_sms
 
 from .models import PersonalInformation, User
 
-log = logging.getLogger(__name__)
+log = get_logger(__name__)
 
 
 class MyUserAdmin(MyBaseModelAdmin):
@@ -138,11 +138,10 @@ class PersonalInformationAdmin(MyBaseModelAdmin):
                     )
                     log.info("Created new account")
 
-                # Prioritize sending emails instead of SMS because Twilio service has many
-                # limitations during trial use. Will change priority if Twilio account can
-                # be purchased.
-                # Do not send accounts asynchronously, as this is a mandatory step otherwise
-                # the account granting process will be considered failed.
+                # * Prioritize sending emails instead of SMS because Twilio service has many
+                # * limitations during trial use. Will change priority if Twilio account can be purchased.
+                # * Do not send accounts asynchronously, as this is a mandatory step otherwise
+                # * the account granting process will be considered failed.
                 if user.personal_information.email is not None:
                     send_mail(
                         subject="Cấp phát tài khoản",
@@ -200,7 +199,7 @@ class PersonalInformationAdmin(MyBaseModelAdmin):
     def response_change(self, request, obj):
         if "_issue-account" in request.POST:
             self.inform_issue_account_status(request, obj)
-            return HttpResponseRedirect(".")  # stay on the same detail page
+            return HttpResponseRedirect(".")
         return super().response_change(request, obj)
 
     @admin.action(description="Cấp phát tài khoản")

@@ -59,7 +59,7 @@ class Invoice(MyBaseModel):
 class InvoiceDetail(MyBaseModel):
     class PAYMENT_METHODS(models.TextChoices):
         E_WALLET = "E_WALLET", _("Ví điện tử")
-        ACCREDITATIVE = "ACCREDITATIVE", _("Ủy nhiệm chi")
+        PROOF_IMAGE = "PROOF_IMAGE", _("Ủy nhiệm chi")
 
     payment_method = models.CharField(
         _("Phương thức thanh toán"), max_length=15, choices=PAYMENT_METHODS.choices
@@ -85,7 +85,8 @@ class InvoiceDetail(MyBaseModel):
 """
 A signal receiver function to generate an invoice ID before saving the Invoice instance.
 
-This function listens for the pre-save signal of the Invoice model and generates a unique invoice ID if it does not already exist.
+This function listens for the pre-save signal of the Invoice model and generates a unique 
+invoice ID if it does not already exist.
 
 Args:
     sender: The sender of the signal.

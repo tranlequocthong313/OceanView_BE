@@ -21,12 +21,12 @@ class VehicleSerializer(serializers.ModelSerializer):
         vehicle_type = attrs.get("vehicle_type")
         license_plate = attrs.get("license_plate")
 
-        if vehicle_type == models.Vehicle.VehicleType.BYCYCLE and license_plate:
+        if vehicle_type == models.Vehicle.VehicleType.BICYCLE and license_plate:
             raise serializers.ValidationError(
                 {"license_plate": "Bicycles do not have license plates"}
             )
 
-        if vehicle_type != models.Vehicle.VehicleType.BYCYCLE and not license_plate:
+        if vehicle_type != models.Vehicle.VehicleType.BICYCLE and not license_plate:
             raise serializers.ValidationError(
                 {
                     "license_plate": f"{models.Vehicle.get_vehicle_type_label(vehicle_type)} need license plates"

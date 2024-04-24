@@ -1,9 +1,7 @@
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiExample, OpenApiParameter
 
-from utils import format
-
-from . import models, serializers
+from . import serializers
 
 LOCKER_LIST = {
     "description": "Get lockers",

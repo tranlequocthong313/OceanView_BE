@@ -1,16 +1,15 @@
-import logging
-
 from django.core.cache import cache
 from django.http import HttpResponseForbidden
 
-from utils import http
+from utils import get_logger, http
 
-log = logging.getLogger(__name__)
+log = get_logger(__name__)
 
 """
 A middleware class to rate limit the sending of OTP (One-Time Password) requests.
 
-This middleware checks the number of OTP requests from a user's IP address and restricts the frequency of sending OTPs.
+This middleware checks the number of OTP requests from a user's IP address and restricts 
+the frequency of sending OTPs.
 
 Args:
     get_response: The function to get the response in the middleware.

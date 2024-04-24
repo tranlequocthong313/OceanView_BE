@@ -73,7 +73,7 @@ class Command(BaseCommand):
                         price=55000,
                     ),
                     Service(
-                        service_id=Service.ServiceType.BYCYCLE_PARKING_CARD,
+                        service_id=Service.ServiceType.BICYCLE_PARKING_CARD,
                         name="Thẻ gửi xe đạp",
                         price=70000,
                     ),

@@ -1,5 +1,3 @@
-import logging
-
 from django.db.models import Q
 from drf_spectacular.utils import extend_schema
 from rest_framework.generics import (
@@ -10,10 +8,12 @@ from rest_framework.generics import (
 from rest_framework.permissions import IsAdminUser
 from rest_framework.viewsets import ReadOnlyModelViewSet, ViewSet
 
+from utils import get_logger
+
 from . import serializers, swaggers
 from .models import Item, Locker
 
-log = logging.getLogger(__name__)
+log = get_logger(__name__)
 
 
 class LockerView(ListAPIView, ViewSet):
