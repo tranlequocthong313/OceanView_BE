@@ -11,7 +11,7 @@ INVOICE = {
             value={
                 "title": "Không có nước",
                 "content": "Phòng A101 không có nước",
-                "type": "COMPALIN | QUESTION | SUPPORT | OTHER",
+                "type": "COMPLAIN | QUESTION | SUPPORT | OTHER",
             },
         )
     ],

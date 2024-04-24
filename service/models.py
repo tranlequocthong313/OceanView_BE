@@ -15,7 +15,7 @@ class Service(MyBaseModel):
     class ServiceType(models.TextChoices):
         ACCESS_CARD = "ACCESS_CARD", _("Thẻ ra vào")
         RESIDENT_CARD = "RESIDENT_CARD", _("Thẻ cư dân")
-        BYCYCLE_PARKING_CARD = "BYCYCLE_PARKING_CARD", _("Thẻ gửi xe đạp")
+        BICYCLE_PARKING_CARD = "BICYCLE_PARKING_CARD", _("Thẻ gửi xe đạp")
         MOTOR_PARKING_CARD = "MOTOR_PARKING_CARD", _("Thẻ gửi xe máy")
         CAR_PARKING_CARD = "CAR_PARKING_CARD", _("Thẻ gửi xe ô tô")
 
@@ -40,7 +40,7 @@ class Service(MyBaseModel):
     @classmethod
     def parking_services(cls):
         return [
-            Service.ServiceType.BYCYCLE_PARKING_CARD,
+            Service.ServiceType.BICYCLE_PARKING_CARD,
             Service.ServiceType.MOTOR_PARKING_CARD,
             Service.ServiceType.CAR_PARKING_CARD,
         ]
@@ -126,7 +126,7 @@ class ServiceRegistration(MyBaseModel):
 
 class Vehicle(MyBaseModel):
     class VehicleType(models.TextChoices):
-        BYCYCLE = "BYCYCLE", _("Xe đạp")
+        BICYCLE = "BICYCLE", _("Xe đạp")
         MOTORBIKE = "MOTORBIKE", _("Xe máy")
         CAR = "CAR", _("Xe ô tô")
 
@@ -164,7 +164,7 @@ class Vehicle(MyBaseModel):
     @classmethod
     def get_service_id(cls, vehicle_type):
         SERVICE_IDS = {
-            cls.VehicleType.BYCYCLE: Service.ServiceType.BYCYCLE_PARKING_CARD,
+            cls.VehicleType.BICYCLE: Service.ServiceType.BICYCLE_PARKING_CARD,
             cls.VehicleType.MOTORBIKE: Service.ServiceType.MOTOR_PARKING_CARD,
             cls.VehicleType.CAR: Service.ServiceType.CAR_PARKING_CARD,
         }

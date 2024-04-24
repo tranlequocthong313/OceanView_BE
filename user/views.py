@@ -1,5 +1,4 @@
 import hashlib
-import logging
 import traceback
 
 import requests
@@ -17,12 +16,12 @@ from rest_framework.viewsets import ViewSet
 
 from app import settings
 from user.models import User
-from utils import email, http, sms, token
+from utils import email, get_logger, http, sms, token
 
 from . import serializers, swaggers
 from .permissions import IsOwner
 
-log = logging.getLogger(__name__)
+log = get_logger(__name__)
 
 
 class UserView(ViewSet, GenericAPIView):
@@ -44,7 +43,7 @@ class UserView(ViewSet, GenericAPIView):
         self.check_object_permissions(request=request, obj=request.user)
         if request.user.is_active_user:
             return Response(
-                "User has already actived",
+                "User has already active",
                 status=status.HTTP_400_BAD_REQUEST,
             )
         log.info("{request.user} can active account")
@@ -131,7 +130,7 @@ class UserView(ViewSet, GenericAPIView):
             "client_secret": settings.CLIENT_SECRET,
         }
         r = requests.post(url=f"{settings.HOST}/o/token/", data=payload)
-        log.info("Requested to Oauth2 succesfully")
+        log.info("Requested to Oauth2 successfully")
 
         if r.status_code == status.HTTP_200_OK:
             log.info("Refresh token successfully")
@@ -172,11 +171,10 @@ class UserView(ViewSet, GenericAPIView):
             if user is None:
                 log.error("User does not exist for reset password")
                 return Response(
-                    "User does not exist",
-                    status=status.HTTP_404_NOT_FOUND,
+                    "User does not exist", status=status.HTTP_404_NOT_FOUNDe
                 )
 
-            log.info(f"Reseting password for {user}")
+            log.info(f"Resetting password for {user}")
             return Response(
                 serializers.MethodForResetPasswordSerializer(
                     user.personal_information

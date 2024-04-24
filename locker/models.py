@@ -35,7 +35,8 @@ class Locker(MyBaseModel):
 """
 A signal receiver function to create a locker for a user after the user is created.
 
-This function listens for the post-save signal of the User model and creates a Locker instance for the newly created user.
+This function listens for the post-save signal of the User model and creates a Locker 
+instance for the newly created user.
 
 Args:
     sender: The sender of the signal.
@@ -85,7 +86,8 @@ class Item(MyBaseModel):
 """
 A signal receiver function to update the status of a locker based on item changes.
 
-This function listens for post-save and post-delete signals of the Item model and updates the status of the associated locker accordingly.
+This function listens for post-save and post-delete signals of the Item model and updates 
+the status of the associated locker accordingly.
 
 Args:
     sender: The sender of the signal.

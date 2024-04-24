@@ -1,14 +1,15 @@
-import logging
-
 from django.contrib.auth.models import BaseUserManager
 from django.utils.translation import gettext_lazy as _
 
-log = logging.getLogger(__name__)
+from utils import get_logger
+
+log = get_logger(__name__)
 
 """
 A custom user manager class for creating superusers with foreign key relationships.
 
-This manager creates superusers with specific attributes and ensures that is_staff and is_superuser are set to True.
+This manager creates superusers with specific attributes and ensures that is_staff and 
+is_superuser are set to True.
 
 Args:
     password (str): The password for the superuser.

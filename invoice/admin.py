@@ -1,11 +1,9 @@
-import logging
-
 from app.admin import MyBaseModelAdmin, admin_site
-from utils import format
+from utils import format, get_logger
 
 from . import models
 
-log = logging.getLogger(__name__)
+log = get_logger(__name__)
 
 
 class InvoiceTypeAdmin(MyBaseModelAdmin):
