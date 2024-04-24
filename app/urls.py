@@ -28,6 +28,7 @@ urlpatterns = [
     path("", include("service.urls")),
     path("", include("invoice.urls")),
     path("", include("feedback.urls")),
+    path("", include("locker.urls")),
     path("admin/", admin_site.urls),
     path("o/", include("oauth2_provider.urls", namespace="oauth2_provider")),
     path("accounts/login/", LoginView.as_view(template_name="admin/login.html")),

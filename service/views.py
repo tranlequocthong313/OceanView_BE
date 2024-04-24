@@ -49,11 +49,11 @@ class ServiceRegistrationView(DestroyAPIView, ReadOnlyModelViewSet):
                 ),
             }
 
-            if category is not None and category in categories:
+            if category and category in categories:
                 queryset = categories[category]
-            if status is not None:
+            if status:
                 queryset = queryset.filter(status=status)
-            if exclude_status is not None and queryset:
+            if exclude_status:
                 queryset = queryset.exclude(status=exclude_status)
 
         return queryset

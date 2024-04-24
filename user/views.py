@@ -193,7 +193,7 @@ class UserView(ViewSet, GenericAPIView):
     @extend_schema(**swaggers.USER_SEND_RESET_PASSWORD_LINK)
     @action(
         methods=["post"],
-        url_path="send-reset-password-link",
+        url_path="email",
         detail=False,
         permission_classes=[AllowAny],
         serializer_class=serializers.SendResetPasswordLinkSerializer,
@@ -228,7 +228,7 @@ class UserView(ViewSet, GenericAPIView):
                 template="account/email/forgot_password",
                 recipient_list=[user.personal_information.email],
                 user=user,
-                link=f"{settings.HOST}/users/reset-password/?token={reset_password_token}",
+                link=f"{settings.HOST}/users/password/?token={reset_password_token}",
             )
             log.info(f"Sent reset password link")
             return Response(
@@ -245,7 +245,7 @@ class UserView(ViewSet, GenericAPIView):
     @extend_schema(**swaggers.USER_SEND_OTP)
     @action(
         methods=["post"],
-        url_path="send-otp",
+        url_path="otp",
         detail=False,
         permission_classes=[AllowAny],
         serializer_class=serializers.SendOTPSerializer,
@@ -293,7 +293,7 @@ class UserView(ViewSet, GenericAPIView):
     @extend_schema(**swaggers.USER_VERIFY_OTP)
     @action(
         methods=["post"],
-        url_path="verify-otp",
+        url_path="otp-verification",
         detail=False,
         permission_classes=[AllowAny],
         serializer_class=serializers.VerifyOTPSerializer,
@@ -376,7 +376,7 @@ class UserView(ViewSet, GenericAPIView):
     @action(
         methods=["get", "post"],
         detail=False,
-        url_path="reset-password",
+        url_path="password",
         permission_classes=[AllowAny],
         serializer_class=serializers.ResetPasswordSerializer,
     )
@@ -400,9 +400,7 @@ class UserView(ViewSet, GenericAPIView):
         return TemplateResponse(
             request,
             "account/reset_password.html",
-            {
-                "link": f"{settings.HOST}/users/reset-password/?token={reset_password_token}"
-            },
+            {"link": f"{settings.HOST}/users/password/?token={reset_password_token}"},
         )
 
     def post_reset_password(self, request):
