@@ -1,3 +1,66 @@
-from django.shortcuts import render
+import logging
 
-# Create your views here.
+from django.db.models import Q
+from rest_framework.generics import (
+    CreateAPIView,
+    ListAPIView,
+    UpdateAPIView,
+)
+from rest_framework.permissions import IsAdminUser
+from rest_framework.viewsets import ReadOnlyModelViewSet, ViewSet
+
+from . import serializers
+from .models import Item, Locker
+
+log = logging.getLogger(__name__)
+
+
+class LockerView(ListAPIView, ViewSet):
+    serializer_class = serializers.LockerSerializer
+    permission_classes = [IsAdminUser]
+    lookup_url_kwarg = "locker_id"
+
+    def get_queryset(self):
+        queryset = Locker.objects.all()
+        if self.action == "list":
+            q = self.request.query_params.get("q")
+            if q:
+                queryset = queryset.filter(
+                    Q(owner__resident_id=q)
+                    | Q(owner__personal_information__citizen_id__icontains=q)
+                    | Q(owner__personal_information__phone_number__icontains=q)
+                    | Q(owner__personal_information__email__icontains=q)
+                )
+        return queryset
+
+    def get_serializer_class(self):
+        if self.action == "list":
+            return serializers.LockerSerializer
+        return super().get_serializer_class()
+
+
+class ItemView(UpdateAPIView, CreateAPIView, ReadOnlyModelViewSet):
+    serializer_class = serializers.ItemSerializer
+    permission_classes = [IsAdminUser]
+    http_method_names = ["get", "post", "patch"]
+    lookup_url_kwarg = "item_id"
+
+    def get_queryset(self):
+        queryset = Item.objects.filter(locker_id=self.kwargs["locker_id"]).all()
+
+        if self.action == "list":
+            q = self.request.query_params.get("q")
+            status = self.request.query_params.get("status")
+            exclude_status = self.request.query_params.get("_status")
+
+            if q:
+                queryset = queryset.filter(name__icontains=q)
+            if status:
+                queryset = queryset.filter(status=status)
+            if exclude_status:
+                queryset = queryset.exclude(status=exclude_status)
+
+        return queryset
+
+    def perform_create(self, serializer):
+        serializer.save(locker_id=self.kwargs["locker_id"])
