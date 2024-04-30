@@ -10,16 +10,18 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.2/ref/settings/
 """
 
+import base64
 import os
 from pathlib import Path
 
 import cloudinary
 import pymysql
 from dotenv import load_dotenv
+from firebase_admin import credentials, initialize_app
 
 pymysql.install_as_MySQLdb()
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 load_dotenv()
@@ -32,19 +34,17 @@ def is_development_env():
     return ENVIRONMENT == "development"
 
 
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/3.2/howto/deployment/checklist/
-
-# SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.environ.get("SECRET_KEY")
 
-# SECURITY WARNING: don't run with debug turned on in production!
+
 DEBUG = is_development_env()
 
 ALLOWED_HOSTS = ["*"]
+HOST = os.environ.get("HOST", "http://0.0.0.0:8000")
+USE_X_FORWARDED_HOST = True
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+CSRF_TRUSTED_ORIGINS = [HOST, "http://0.0.0.0:8000", "http://localhost:8000"]
 
-
-# Application definition
 
 INSTALLED_APPS = [
     "user.apps.UserConfig",
@@ -64,7 +64,9 @@ INSTALLED_APPS = [
     "apartment.apps.ApartmentConfig",
     "feedback.apps.FeedbackConfig",
     "locker.apps.LockerConfig",
+    "notification.apps.NotificationConfig",
 ]
+
 
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
@@ -100,9 +102,6 @@ TEMPLATES = [
 WSGI_APPLICATION = "app.wsgi.application"
 
 
-# Database
-# https://docs.djangoproject.com/en/3.2/ref/settings/#databases
-
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.mysql",
@@ -116,8 +115,6 @@ DATABASES = {
 
 print(f"DB HOST: {DATABASES['default']['HOST']}")
 
-# Password validation
-# https://docs.djangoproject.com/en/3.2/ref/settings/#auth-password-validators
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -135,9 +132,6 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 
-# Internationalization
-# https://docs.djangoproject.com/en/3.2/topics/i18n/
-
 LANGUAGE_CODE = "en-us"
 
 TIME_ZONE = "UTC"
@@ -149,21 +143,14 @@ USE_L10N = True
 USE_TZ = True
 
 
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/3.2/howto/static-files/
-
 STATIC_URL = "/static/"
 
-# This production code might break development mode, so we check whether we're in DEBUG mode
+
 if not DEBUG:
-    # Tell Django to copy static assets into a path called `staticfiles` (this is specific to Render)
     STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
-    # Enable the WhiteNoise storage backend, which compresses static files to reduce disk use
-    # and renames the files with unique names for each version to support long-term caching
+
     STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
-# Default primary key field type
-# https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
@@ -238,7 +225,6 @@ TWILIO_NUMBER = os.environ.get("TWILIO_NUMBER")
 TWILIO_SERVICE_SID = os.environ.get("TWILIO_SERVICE_SID")
 TWILIO_SENDGRID_API_KEY = os.environ.get("TWILIO_SENDGRID_API_KEY")
 
-# EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 EMAIL_BACKEND = "backend.email.EmailBackend"
 EMAIL_HOST = "smtp.gmail.com"
 EMAIL_PORT = 587
@@ -277,8 +263,6 @@ SPECTACULAR_SETTINGS = {
     "REDOC_DIST": "SIDECAR",
 }
 
-HOST = os.environ.get("HOST", "http://0.0.0.0:8000")
-
 ADMIN_INFO = {
     "personal_information": {
         "citizen_id": os.environ.get("ADMIN_CITIZEN_ID"),
@@ -288,3 +272,24 @@ ADMIN_INFO = {
     },
     "password": os.environ.get("ADMIN_PASSWORD"),
 }
+
+
+firebase_credentials = {
+    "type": os.environ.get("FIREBASE_TYPE"),
+    "project_id": os.environ.get("FIREBASE_PROJECT_ID"),
+    "private_key_id": os.environ.get("FIREBASE_PRIVATE_KEY_ID"),
+    "private_key": base64.b64decode(
+        os.environ.get("FIREBASE_PRIVATE_KEY").encode("ascii")
+    ).decode("ascii"),
+    "client_email": os.environ.get("FIREBASE_CLIENT_EMAIL"),
+    "client_id": os.environ.get("FIREBASE_CLIENT_ID"),
+    "auth_uri": os.environ.get("FIREBASE_AUTH_URI"),
+    "token_uri": os.environ.get("FIREBASE_TOKEN_URI"),
+    "auth_provider_x509_cert_url": os.environ.get(
+        "FIREBASE_AUTH_PROVIDER_X509_CERT_URL"
+    ),
+    "client_x509_cert_url": os.environ.get("FIREBASE_CLIENT_X509_CERT_URL"),
+    "universe_domain": os.environ.get("FIREBASE_UNIVERSE_DOMAIN"),
+}
+cred = credentials.Certificate(firebase_credentials)
+FIREBASE_ADMIN = initialize_app(cred)

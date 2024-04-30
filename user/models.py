@@ -115,6 +115,9 @@ class User(AbstractBaseUser, PermissionsMixin):
         null=True,
         blank=True,
     )
+    number_of_unread_notifications = models.PositiveBigIntegerField(
+        verbose_name=_("Thông báo chưa đọc"), default=0
+    )
 
     USERNAME_FIELD = "resident_id"
     objects = CustomUserWithForeignKeyManager()
@@ -206,6 +209,13 @@ class User(AbstractBaseUser, PermissionsMixin):
     @property
     def is_active_user(self):
         return self.status == self.Status.ACTIVE
+
+    @property
+    def avatar_url(self):
+        if self.avatar:
+            self.avatar.url_options.update({"secure": True})
+            return self.avatar.url
+        return None
 
     def change_password(self, new_password):
         self.set_password(new_password)

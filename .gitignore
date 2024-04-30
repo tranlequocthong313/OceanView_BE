@@ -170,3 +170,5 @@ mysql
 /tmp/redis.db
 
 secrets
+
+firebase-cred.json

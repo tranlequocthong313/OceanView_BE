@@ -1,11 +1,9 @@
 import getpass
-import traceback
 
 import colorama
 from colorama import Fore
-from django.contrib.auth import get_user_model
+from django.contrib.auth import get_user_model, password_validation
 from django.contrib.auth.management.commands import createsuperuser
-from django.contrib.auth.password_validation import validate_password
 from django.core import exceptions
 from django.db import transaction
 
@@ -14,19 +12,6 @@ from utils import get_logger
 
 log = get_logger(__name__)
 colorama.init(autoreset=True)
-
-"""
-A management command to create a superuser with custom fields.
-
-This command prompts the user to input personal information and password for the superuser creation process.
-
-Args:
-    *args: Additional positional arguments.
-    **options: Additional keyword arguments.
-
-Returns:
-    None
-"""
 
 
 class Command(createsuperuser.Command):
@@ -51,35 +36,40 @@ class Command(createsuperuser.Command):
         try:
             resident_id = get_user_model().generate_resident_id()
         except OverflowError:
-            log.error(traceback.format_exc())
+            self.stderr.write("Error: Cannot generate resident ID.")
             return
 
-        print(f"{Fore.GREEN}This is your Resident ID: {resident_id}")
+        self.stdout.write(f"{Fore.GREEN}This is your Resident ID: {resident_id}")
 
         user_data = {
             "personal_information": personal_information,
             "resident_id": resident_id,
         }
+
         while "password" not in user_data:
-            password = getpass.getpass()
-            password2 = getpass.getpass("Password (again): ")
+            password = self.get_password()
+            password2 = self.get_password("Password (again): ")
 
             if password != password2:
                 self.stderr.write("Error: Your passwords didn't match.")
                 continue
-            if password.strip() == "":
-                self.stderr.write("Error: Blank passwords aren't allowed.")
-                continue
-            try:
-                validate_password(password2, self.UserModel(**user_data))
-            except exceptions.ValidationError as err:
-                self.stderr.write("\n".join(err.messages))
-                continue
-            except Exception as err:
-                self.stderr.write("\n".join(err.messages))
-                continue
+
             user_data["password"] = password
 
-        get_user_model().objects.create_superuser(**user_data)
+        try:
+            get_user_model().objects.create_superuser(**user_data)
+            self.stdout.write(f"{Fore.GREEN}Created superuser successfully!")
+        except exceptions.ValidationError as err:
+            self.stderr.write(err.messages[0])
+            return
 
-        print(f"{Fore.GREEN}Created superuser successfully!")
+    def get_password(self, prompt="Password: "):
+        password = None
+        while not password:
+            password = getpass.getpass(prompt)
+            try:
+                password_validation.validate_password(password)
+            except exceptions.ValidationError as err:
+                self.stderr.write("\n".join(err.messages))
+                password = None
+        return password

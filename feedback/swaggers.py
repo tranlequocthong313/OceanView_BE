@@ -1,6 +1,9 @@
 from drf_spectacular.utils import OpenApiExample
 
+from utils import format
+
 from . import serializers
+from .models import Feedback
 
 INVOICE = {
     "request": serializers.FeedbackSerializer,
@@ -11,7 +14,7 @@ INVOICE = {
             value={
                 "title": "Không có nước",
                 "content": "Phòng A101 không có nước",
-                "type": "COMPLAIN | QUESTION | SUPPORT | OTHER",
+                "type": format.format_enum_values(Feedback.FeedbackType),
             },
         )
     ],

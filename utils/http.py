@@ -15,3 +15,11 @@ def get_client_ip(request):
         if (x_forwarded_for := request.META.get("HTTP_X_FORWARDED_FOR"))
         else request.META.get("REMOTE_ADDR")
     )
+
+
+def get_bearer_token(full_token):
+    prefix = "bearer"
+    if not full_token and not full_token.lower().startswith(prefix):
+        raise ValueError("Invalid token")
+
+    return full_token[len(prefix) :].strip()

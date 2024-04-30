@@ -1,6 +1,543 @@
-{% extends "admin/base_site.html" %}
+{% extends "admin/base_site.html" %} {% block extrastyle %}
+<style>
+  .loading-indicator {
+    display: none;
+    text-align: center;
+    padding: 10px;
+  }
 
-{% block branding %}
-        <img width='36' height='36' style='margin-right: 8px; border-radius: 50%;' src="https://res.cloudinary.com/diojasks1/image/upload/v1712589591/dy6nxcxwkhrrebcclhys.jpg" alt="logo">
-        {{ block.super }}
+  .notifier {
+    position: relative;
+    display: inline-block;
+    margin-left: auto;
+  }
+
+  .badge {
+    display: none;
+    position: absolute;
+    top: -5px;
+    left: 24px;
+    padding: 0 5px;
+    font-size: 16px;
+    line-height: 22px;
+    height: 22px;
+    background: red;
+    color: #fff;
+    border-radius: 11px;
+    white-space: nowrap;
+  }
+
+  .notifier.new .badge {
+    animation: pulse 2s ease-out infinite;
+  }
+
+  @keyframes pulse {
+    40% {
+      transform: scale3d(1, 1, 1);
+    }
+    50% {
+      transform: scale3d(1.3, 1.3, 1.3);
+    }
+    55% {
+      transform: scale3d(1, 1, 1);
+    }
+    60% {
+      transform: scale3d(1.3, 1.3, 1.3);
+    }
+    65% {
+      transform: scale3d(1, 1, 1);
+    }
+  }
+
+  .notification-drop {
+    font-family: 'Ubuntu', sans-serif;
+    color: #333;
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  .notification-drop .item {
+    padding: 10px;
+    font-size: 18px;
+    position: relative;
+    cursor: pointer;
+  }
+
+  .notification-drop .item i {
+    margin-left: 10px;
+    font-size: 20px;
+  }
+
+  .notification-drop .item ul {
+    list-style-type: none;
+    display: none;
+    position: absolute;
+    top: 100%;
+    background: #fff;
+    left: -360px;
+    right: 0;
+    z-index: 1;
+    border-top: 1px solid #ddd;
+    width: 400px;
+  }
+
+  .notification-drop .item ul li {
+    font-size: 16px;
+    padding: 15px 0 15px 25px;
+  }
+
+  .notification-drop .item ul li:hover {
+    background: #ddd;
+    color: #333;
+  }
+
+  .notification-text {
+    font-size: 14px;
+    font-weight: bold;
+  }
+
+  .notification-text span {
+    float: right;
+  }
+
+  .notification-link {
+    text-decoration: none;
+    color: #333;
+    display: block;
+    padding: 10px;
+    width: 80%;
+  }
+
+  .notification-link:hover {
+    background-color: #f5f5f5;
+  }
+
+  .notification-title {
+    font-weight: bold;
+  }
+
+  .notification-date {
+    font-size: 12px;
+    color: #888;
+  }
+
+  .notification-title,
+  .notification-body,
+  .notification-date {
+    color: #333;
+  }
+
+  .notification-link:hover .notification-title,
+  .notification-link:hover .notification-body,
+  .notification-link:hover .notification-date {
+    color: #333;
+  }
+
+  .notification-drop ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .notification-item {
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid #ddd;
+    padding: 10px;
+  }
+
+  .notification-image {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    margin-right: 10px;
+    background-size: cover;
+  }
+
+  .notification-drop .item ul {
+    list-style-type: none;
+    display: none;
+    position: absolute;
+    top: 100%;
+    background: #fff;
+    z-index: 1;
+    border-top: 1px solid #ddd;
+    width: 400px;
+    overflow-y: auto;
+  }
+
+  .notification-drop .item ul li {
+    font-size: 16px;
+    padding: 15px 0 15px 25px;
+  }
+
+  .notification-drop .item ul li:hover {
+    background: #ddd;
+    color: #333;
+  }
+
+  .empty-message {
+    text-align: center;
+    padding: 15px;
+    color: #999;
+    height: 100%;
+  }
+
+  .notification-list {
+    box-shadow: 0 1px 2px #666;
+  }
+
+  .notification-item.unread {
+    background-color: #9bbbca;
+  }
+
+  .notification-item.unread .notification-title {
+    font-weight: bold;
+  }
+
+  @media only screen and (max-width: 520px) {
+    .notification-list {
+      left: -142px !important;
+      width: calc(100vw - 80px) !important;
+    }
+  }
+</style>
+
+{% endblock %} {% block branding %}
+<img
+  width="36"
+  height="36"
+  style="margin-right: 8px; border-radius: 50%"
+  src="https://res.cloudinary.com/diojasks1/image/upload/v1712589591/dy6nxcxwkhrrebcclhys.jpg"
+  alt="logo"
+/>
+{{ block.super }} {% endblock %} {% load static %} {% block nav-global %}
+<div class="notification-drop">
+  <div class="item">
+    <div class="notifier new">
+      &#128276;
+      <div class="badge">0</div>
+    </div>
+
+    <ul class="notification-list">
+      <li class="empty-message">Không có thông báo</li>
+    </ul>
+  </div>
+</div>
+{% endblock %} {% block footer %}
+<script type="module">
+  import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js';
+  import {
+    onMessage,
+    getToken,
+    getMessaging,
+  } from 'https://www.gstatic.com/firebasejs/10.11.0/firebase-messaging.js';
+
+  const firebaseConfig = {
+    apiKey: 'AIzaSyBWBYDF68ic-f8vT18_JWKoIJOXHolp_n4',
+    authDomain: 'oceanview-9bd7c.firebaseapp.com',
+    projectId: 'oceanview-9bd7c',
+    storageBucket: 'oceanview-9bd7c.appspot.com',
+    messagingSenderId: '771961665424',
+    appId: '1:771961665424:web:cd47c0b171cdc7e0a82515',
+    measurementId: 'G-7LMV2TM26W',
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const messaging = getMessaging(app);
+
+  function askPermission() {
+    return new Promise(function (resolve, reject) {
+      const permissionResult = Notification.requestPermission(function (
+        result
+      ) {
+        resolve(result);
+      });
+
+      if (permissionResult) {
+        permissionResult.then(resolve, reject);
+      }
+    }).then(function (permissionResult) {
+      if (permissionResult !== 'granted') {
+        throw new Error("We weren't granted permission.");
+      }
+    });
+  }
+
+  function getNotificationPermissionState() {
+    if (navigator.permissions) {
+      return navigator.permissions
+        .query({ name: 'notifications' })
+        .then((result) => {
+          return result.state;
+        });
+    }
+
+    return new Promise((resolve) => {
+      resolve(Notification.permission);
+    });
+  }
+
+  function getCookies() {
+    const cookieString = document.cookie;
+    const cookies = {};
+
+    if (cookieString === '') {
+      return cookies;
+    }
+
+    cookieString.split(';').forEach((cookie) => {
+      const [name, value] = cookie.trim().split('=');
+      cookies[name] = decodeURIComponent(value);
+    });
+
+    return cookies;
+  }
+
+  if ('{{user.is_authenticated}}' === 'True') {
+    function getStoredToken() {
+      const cookies = getCookies();
+      return cookies['fcm_token'];
+    }
+
+    const storedToken = getStoredToken();
+
+    getToken(messaging, {
+      vapidKey:
+        'BEEcnz3jjIRHWX2mrNkU_sNWZ2S2H0YArKkiIRGesBLzWaxT673oB1fGGlO_97z3ft1Nzu0iJEmGNMiI1h2VS2E',
+    })
+      .then((currentToken) => {
+        if (currentToken) {
+          if (storedToken !== currentToken) {
+            fetch('{{HOST}}/fcm-tokens/', {
+              method: 'POST',
+              credentials: 'include',
+              body: JSON.stringify({
+                token: currentToken,
+                device_type: 'WEB',
+              }),
+              headers: {
+                'Content-Type': 'application/json',
+              },
+            }).catch((err) => {
+              console.error(
+                'An error occurred while sending token to server. ',
+                err
+              );
+            });
+          }
+        } else {
+          console.error(
+            'No registration token available. Request permission to generate one.'
+          );
+          askPermission();
+        }
+      })
+      .catch((err) => {
+        console.error('An error occurred while retrieving token. ', err);
+      });
+
+    document.addEventListener('DOMContentLoaded', function () {
+      let notifications = [];
+      let nextPageUrl = null;
+      let isLoading = false;
+      const badge = document.querySelector('.badge');
+      const notificationList = document.querySelector(
+        '.notification-drop .notification-list'
+      );
+      const loadingIndicator = document.createElement('div');
+      loadingIndicator.classList.add('loading-indicator');
+      loadingIndicator.textContent = 'Đang tải...';
+      notificationList.appendChild(loadingIndicator);
+      const defaultImage =
+        'https://res.cloudinary.com/diojasks1/image/upload/v1713710625/jvwdbfxb84j7pkaci3nd.jpg';
+
+      function fetchNotifications(url) {
+        isLoading = true;
+        loadingIndicator.style.display = 'block';
+
+        fetch(url)
+          .then((response) => response.json())
+          .then((data) => {
+            notifications = [...notifications, ...data.results];
+            nextPageUrl = data.next;
+            renderNotifications(data.badge);
+          })
+          .catch((error) =>
+            console.error('Error fetching notifications:', error)
+          )
+          .finally(() => {
+            isLoading = false;
+            loadingIndicator.style.display = 'none';
+          });
+      }
+
+      function renderNotifications(badgeCount) {
+        notificationList.innerHTML = '';
+
+        if (notifications.length === 0) {
+          const emptyMessage = document.createElement('li');
+          emptyMessage.textContent = 'Không có thông báo.';
+          notificationList.appendChild(emptyMessage);
+        } else {
+          notifications.forEach((notification) => {
+            const li = createNotificationItem(notification);
+            notificationList.appendChild(li);
+          });
+
+          if (nextPageUrl) {
+            notificationList.style.maxHeight = '500px';
+            notificationList.style.overflowY = 'auto';
+            notificationList.addEventListener('scroll', function () {
+              if (
+                !isLoading &&
+                notificationList.scrollTop + notificationList.clientHeight >=
+                  notificationList.scrollHeight
+              ) {
+                fetchNextPage();
+              }
+            });
+          }
+        }
+
+        badge.textContent = badgeCount.toString();
+        badge.style.display = badgeCount === 0 ? 'none' : 'block';
+      }
+
+      function paginateNotifications(pageNumber, pageSize) {
+        const startIndex = (pageNumber - 1) * pageSize;
+        return notifications.slice(startIndex, startIndex + pageSize);
+      }
+
+      function createNotificationItem(notification) {
+        const li = document.createElement('li');
+        li.classList.add('notification-item');
+        if (!notification.has_been_read) {
+          li.classList.add('unread');
+          li.addEventListener('click', function () {
+            markAsRead(notification.id, notification.content.id);
+          });
+        }
+
+        const img = document.createElement('div');
+        img.classList.add('notification-image');
+        img.style.backgroundImage =
+          'url(' + (notification.image || defaultImage) + ')';
+
+        const a = document.createElement('a');
+        a.classList.add('notification-link');
+        a.href = notification.link;
+
+        const title = document.createElement('div');
+        title.classList.add('notification-title');
+        title.textContent = notification.message;
+
+        const date = document.createElement('div');
+        date.classList.add('notification-date');
+        date.textContent = new Date(notification.created_date).toLocaleString();
+
+        a.appendChild(title);
+        a.appendChild(date);
+
+        li.appendChild(img);
+        li.appendChild(a);
+
+        return li;
+      }
+
+      function fetchNextPage() {
+        if (nextPageUrl) {
+          fetchNotifications(nextPageUrl);
+        }
+      }
+
+      function markAsRead(notificationId, contentId) {
+        fetch(`{{HOST}}/notifications/read/`, {
+          method: 'POST',
+          body: JSON.stringify({ content_id: contentId }),
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        })
+          .then((response) => {
+            if (response.ok) {
+              const index = notifications.findIndex(
+                (notification) => notification.id === notificationId
+              );
+              if (index !== -1) {
+                notifications[index].has_been_read = true;
+                renderNotifications();
+              }
+            } else {
+              console.error('Failed to mark notification as read');
+            }
+          })
+          .catch((error) => {
+            console.error('Error marking notification as read:', error);
+          });
+      }
+
+      function handleServiceWorkerMessage(event) {
+        const payload = event?.data;
+        if (payload) {
+          const notification = {
+            id: Math.random().toString(),
+            link:
+              payload?.fcmOptions?.link || payload?.notification?.click_action,
+            message: payload.notification?.title || '',
+            created_date: new Date().toISOString(),
+            updated_date: new Date().toISOString(),
+            image: payload.notification?.image || null,
+            has_been_read: false,
+            content: JSON.parse(payload?.data?.content),
+          };
+          notifications.unshift(notification);
+          renderNotifications(Number(badge.textContent) + 1);
+        }
+      }
+
+      navigator.serviceWorker.addEventListener('message', function (event) {
+        handleServiceWorkerMessage(event);
+      });
+
+      fetchNotifications('{{HOST}}/notifications/?source=admin');
+    });
+  }
+
+  var notificationList = document.querySelector(
+    '.notification-drop .notification-list'
+  );
+
+  var notificationItems = document.querySelectorAll('.notification-drop .item');
+  notificationItems.forEach(function (item) {
+    item.addEventListener('click', function () {
+      var ul = this.querySelector('ul');
+      if (ul.style.display === 'none') {
+        ul.style.display = 'block';
+        var rect = notificationList.getBoundingClientRect();
+        if (rect.right > window.innerWidth) {
+          var diff = rect.right - window.innerWidth;
+          notificationList.style.left =
+            parseFloat(getComputedStyle(notificationList).left) - diff + 'px';
+        }
+      } else {
+        ul.style.display = 'none';
+      }
+    });
+  });
+
+  document.addEventListener('click', function (event) {
+    var notificationDrop = document.querySelector('.notification-drop');
+    var isClickInsideNotificationDrop = notificationDrop.contains(event.target);
+
+    if (!isClickInsideNotificationDrop) {
+      var notificationLists = document.querySelectorAll(
+        '.notification-drop .notification-list'
+      );
+      notificationLists.forEach(function (notificationList) {
+        notificationList.style.display = 'none';
+      });
+    }
+  });
+</script>
 {% endblock %}

@@ -24,6 +24,9 @@ class Feedback(MyBaseModel):
         verbose_name=_("Tác giả"), to=User, on_delete=models.CASCADE
     )
 
+    def message_feedback_post(self, action):
+        return f"{self.author} {action}: {self.__str__()}"
+
     class Meta:
         verbose_name = _("Phản ánh")
         verbose_name_plural = _("Phản ánh")
@@ -36,5 +39,12 @@ class Feedback(MyBaseModel):
         self.deleted = True
         self.save()
 
+    @property
+    def image_url(self):
+        if self.image:
+            self.image.url_options.update({"secure": True})
+            return self.image.url
+        return None
+
     def __str__(self) -> str:
-        return f"{self.get_type_display()} - {self.title}"
+        return f"[{self.get_type_display()}] {self.title}"

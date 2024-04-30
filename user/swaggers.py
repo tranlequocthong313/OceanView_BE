@@ -7,6 +7,7 @@ from user.serializers import (
     ForgotPasswordSerializer,
     LoginSerializer,
     LogonUserSerializer,
+    LogoutSerializer,
     MethodForResetPasswordSerializer,
     RefreshTokenSerializer,
     ResetPasswordSerializer,
@@ -219,4 +220,10 @@ USER_RESET_PASSWORD_POST = {
             request_only=True,
         ),
     ],
+}
+
+USER_LOGOUT = {
+    "description": "Logout user",
+    "request": LogoutSerializer,
+    "responses": {200: None},
 }
