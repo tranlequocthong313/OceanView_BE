@@ -1,4 +1,9 @@
+import contextlib
+
+from django.contrib.sessions.backends.cache import SessionStore
 from rest_framework.permissions import BasePermission
+
+from user.models import User
 
 """
 A permission class to check if the requesting user is the owner of the object.
@@ -22,3 +27,23 @@ class IsOwner(BasePermission):
             not request.user.is_anonymous
             and obj.resident_id == request.user.resident_id
         )
+
+
+class NonAccessTokenPermissionMixin:
+    def check_permissions(self, request):
+        if sessionid := request.COOKIES.get("sessionid"):
+            session = SessionStore(session_key=sessionid)
+
+            if session.exists(sessionid) and not session.is_empty():
+                if user_id := session.get("_auth_user_id"):
+                    with contextlib.suppress(User.DoesNotExist):
+                        user = User.objects.get(pk=user_id)
+                        request.user = user
+            else:
+                self.permission_denied(
+                    request,
+                    message="Authentication credentials were not provided.",
+                    code=401,
+                )
+
+        return super().check_permissions(request)

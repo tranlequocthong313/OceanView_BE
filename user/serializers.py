@@ -3,6 +3,8 @@ from django.contrib.auth.password_validation import validate_password
 from django.forms import IntegerField
 from rest_framework import serializers
 
+from notification.models import FCMToken
+
 from . import models
 
 
@@ -38,7 +40,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         rep = super().to_representation(instance)
-        rep["avatar"] = instance.avatar.url if instance.avatar else None
+        rep["avatar"] = instance.avatar_url
 
         return rep
 
@@ -152,3 +154,10 @@ class ResetPasswordSerializer(serializers.Serializer):
             )
 
         return super().validate(attrs)
+
+
+class LogoutSerializer(serializers.Serializer):
+    fcm_token = serializers.CharField(write_only=True, required=False)
+    device_type = serializers.CharField(
+        write_only=True, required=False, default=FCMToken.DeviceType.ANDROID
+    )

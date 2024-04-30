@@ -79,6 +79,13 @@ class Item(MyBaseModel):
         verbose_name = _("Món hàng")
         verbose_name_plural = _("Món hàng")
 
+    @property
+    def image_url(self):
+        if self.image:
+            self.image.url_options.update({"secure": True})
+            return self.image.url
+        return None
+
     def __str__(self) -> str:
         return self.name
 

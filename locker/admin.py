@@ -21,7 +21,7 @@ class ItemInline(admin.TabularInline):
         if obj.image:
             return mark_safe(
                 '<img src="{url}" width="{width}" height={height} />'.format(
-                    url=obj.image.url,
+                    url=obj.image_url,
                     width=100,
                     height=100,
                 )

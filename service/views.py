@@ -12,6 +12,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import ReadOnlyModelViewSet
 
+from firebase.notification_manager import AdminNotificationManager
 from user.models import PersonalInformation
 from utils import get_logger
 
@@ -24,8 +25,7 @@ log = get_logger(__name__)
 class ServiceRegistrationView(DestroyAPIView, ReadOnlyModelViewSet):
     serializer_class = serializers.AccessCardServiceRegistrationSerializer
     permission_classes = [IsAuthenticated]
-    # ? Save the policy on the number of vehicles for each
-    # ? apartment in the database with a separate model
+    # ? Save the policy on the number of vehicles for each apartment in the database with a separate model
     max_vehicle_counts = {
         Vehicle.VehicleType.BICYCLE: 2,
         Vehicle.VehicleType.MOTORBIKE: 2,
@@ -150,6 +150,9 @@ class ServiceRegistrationView(DestroyAPIView, ReadOnlyModelViewSet):
                 personal_information=personal_information,
                 resident=request.user,
             )
+            AdminNotificationManager.create_notification_for_service_registration(
+                request, service_registration
+            )
             log.info(f"{relative} registered successfully")
             return Response(self.serializer_class(service_registration).data)
         except Exception:
@@ -263,6 +266,9 @@ class ServiceRegistrationView(DestroyAPIView, ReadOnlyModelViewSet):
                     apartment_id=room_number,
                 )
                 log.info(f"Registered for {relative} successfully")
+            AdminNotificationManager.create_notification_for_service_registration(
+                request, service_registration
+            )
             return Response(self.serializer_class(service_registration).data)
         except Exception:
             log.error("Server error", traceback.format_exc())

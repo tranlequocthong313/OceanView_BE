@@ -4,6 +4,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
+from firebase.notification_manager import AdminNotificationManager
+
 from . import models, serializers, swaggers
 
 
@@ -31,9 +33,21 @@ class FeedbackView(ModelViewSet):
     def list(self, request, *args, **kwargs):
         return super().list(request, *args, **kwargs)
 
+    def perform_create(self, serializer):
+        return serializer.save()
+
     @extend_schema(**swaggers.INVOICE)
     def create(self, request, *args, **kwargs):
-        return super().create(request, *args, **kwargs)
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        feedback = self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        AdminNotificationManager.create_notification_for_feedback(
+            request=request, feedback=feedback
+        )
+        return Response(
+            serializer.data, status=status.HTTP_201_CREATED, headers=headers
+        )
 
     @extend_schema(**swaggers.INVOICE)
     def partial_update(self, request, *args, **kwargs):

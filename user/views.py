@@ -15,6 +15,7 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ViewSet
 
 from app import settings
+from notification.models import FCMToken
 from user.models import User
 from utils import email, get_logger, http, sms, token
 
@@ -92,7 +93,7 @@ class UserView(ViewSet, GenericAPIView):
         r = requests.post(url=f"{settings.HOST}/o/token/", data=payload)
         log.info("Requested to Oauth2 successfully")
 
-        if r.status_code == status.HTTP_200_OK:
+        if r.ok:
             user = self.get_queryset().get(pk=serializer.validated_data["username"])
             log.info("User login successfully")
             return Response(
@@ -106,7 +107,7 @@ class UserView(ViewSet, GenericAPIView):
             log.error("User login failed", r.json())
             return Response("Resident ID or Password is wrong", r.status_code)
         else:
-            log.error("Server error", r.json())
+            log.error(traceback.format_exc())
             return Response(
                 "Something went wrong", status.HTTP_500_INTERNAL_SERVER_ERROR
             )
@@ -132,7 +133,7 @@ class UserView(ViewSet, GenericAPIView):
         r = requests.post(url=f"{settings.HOST}/o/token/", data=payload)
         log.info("Requested to Oauth2 successfully")
 
-        if r.status_code == status.HTTP_200_OK:
+        if r.ok:
             log.info("Refresh token successfully")
             return Response(
                 r.json(),
@@ -142,7 +143,8 @@ class UserView(ViewSet, GenericAPIView):
             log.error("Refresh token failed", r.json())
             return Response("Refresh token failed", r.status_code)
         else:
-            log.error("Server error", r.json())
+            log.error(traceback.format_exc())
+
             return Response(
                 "Something went wrong", status.HTTP_500_INTERNAL_SERVER_ERROR
             )
@@ -443,4 +445,53 @@ class UserView(ViewSet, GenericAPIView):
                 recipient_list=[user.personal_information.email],
                 user=user,
                 reset_at=formatted_date,
+            )
+
+    @extend_schema(**swaggers.USER_LOGOUT)
+    @action(
+        methods=["post"],
+        url_path="logout",
+        detail=False,
+        permission_classes=[IsAuthenticated],
+        serializer_class=serializers.LogoutSerializer,
+    )
+    def logout(self, request):
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        log.debug(
+            f"logout token {http.get_bearer_token(request.META['HTTP_AUTHORIZATION'])}"
+        )
+        payload = {
+            "token": http.get_bearer_token(request.META["HTTP_AUTHORIZATION"]),
+            "client_id": settings.CLIENT_ID,
+            "client_secret": settings.CLIENT_SECRET,
+        }
+
+        r = requests.post(
+            url=f"{settings.HOST}/o/revoke_token/",
+            data=payload,
+        )
+        log.info("Requested to Oauth2 successfully")
+
+        if r.ok:
+            print(serializer.validated_data)
+            if (
+                "fcm_token" in serializer.validated_data
+                and serializer.validated_data["fcm_token"] is not None
+            ):
+                FCMToken.objects.filter(
+                    token=serializer.validated_data["fcm_token"],
+                    user=request.user,
+                    device_type=serializer.validated_data["device_type"],
+                ).delete()
+            response = Response(
+                status=status.HTTP_204_NO_CONTENT,
+            )
+            log.info("User logout successfully")
+            return response
+        else:
+            log.error(traceback.format_exc())
+            return Response(
+                "Something went wrong", status.HTTP_500_INTERNAL_SERVER_ERROR
             )

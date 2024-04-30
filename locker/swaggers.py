@@ -1,7 +1,10 @@
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiExample, OpenApiParameter
 
+from utils import format
+
 from . import serializers
+from .models import Item
 
 LOCKER_LIST = {
     "description": "Get lockers",
@@ -48,7 +51,7 @@ ITEM_LIST = {
             examples=[
                 OpenApiExample(
                     "Example",
-                    value="RECEIVED | NOT_RECEIVED",
+                    value=format.format_enum_values(Item.ItemStatus),
                 ),
             ],
         ),
@@ -60,7 +63,7 @@ ITEM_LIST = {
             examples=[
                 OpenApiExample(
                     "Example",
-                    value="RECEIVED | NOT_RECEIVED",
+                    value=format.format_enum_values(Item.ItemStatus),
                 ),
             ],
         ),

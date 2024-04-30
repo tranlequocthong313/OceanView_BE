@@ -10,7 +10,7 @@ class FeedbackSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         rep = super().to_representation(instance)
-        rep["image"] = instance.image.url if instance.image else None
+        rep["image"] = instance.image_url
 
         return rep
 

@@ -74,6 +74,7 @@ class ServiceRegistration(MyBaseModel):
     class Status(models.TextChoices):
         WAITING_FOR_APPROVAL = "WAITING_FOR_APPROVAL", _("Chờ được xét duyệt")
         APPROVED = "APPROVED", _("Đã được duyệt")
+        REJECT = "REJECT", _("Bị từ chối")
         CANCELED = "CANCELED", _("Đã hủy")
 
     service = models.ForeignKey(
@@ -95,6 +96,9 @@ class ServiceRegistration(MyBaseModel):
         choices=Status,
         default=Status.WAITING_FOR_APPROVAL,
     )
+
+    def message_service_register(self, action):
+        return f"{self.resident.__str__()} {action} {self.service.get_service_id_display().lower()}."
 
     class Meta:
         verbose_name = _("Đăng ký dịch vụ")

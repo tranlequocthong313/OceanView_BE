@@ -3,6 +3,7 @@ from smtplib import SMTPAuthenticationError, SMTPException
 
 from django.contrib import admin, messages
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group
 from django.db import transaction
 from django.http import HttpResponseRedirect
 from django.utils.html import mark_safe
@@ -52,7 +53,7 @@ class MyUserAdmin(MyBaseModelAdmin):
 
     @admin.display(description="Ảnh đại diện")
     def user_avatar(self, obj):
-        return mark_safe(f'<img width="300" src="{obj.avatar.url}" />')
+        return mark_safe(f'<img width="300" src="{obj.avatar_url}" />')
 
     def ban_user(self, request, user):
         if user.is_banned:
@@ -138,10 +139,7 @@ class PersonalInformationAdmin(MyBaseModelAdmin):
                     )
                     log.info("Created new account")
 
-                # * Prioritize sending emails instead of SMS because Twilio service has many
-                # * limitations during trial use. Will change priority if Twilio account can be purchased.
-                # * Do not send accounts asynchronously, as this is a mandatory step otherwise
-                # * the account granting process will be considered failed.
+                # * Prioritize sending emails instead of SMS because Twilio service has many limitations during trial use. Will change priority if Twilio account can be purchased. Do not send accounts asynchronously, as this is a mandatory step otherwise the account granting process will be considered failed.
                 if user.personal_information.email is not None:
                     send_mail(
                         subject="Cấp phát tài khoản",
@@ -210,3 +208,4 @@ class PersonalInformationAdmin(MyBaseModelAdmin):
 
 admin_site.register(PersonalInformation, PersonalInformationAdmin)
 admin_site.register(User, MyUserAdmin)
+admin_site.register(Group)
