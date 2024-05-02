@@ -12,7 +12,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import ReadOnlyModelViewSet
 
-from firebase.notification_manager import AdminNotificationManager
+from notification.manager import AdminNotificationManager
 from user.models import PersonalInformation
 from utils import get_logger
 

@@ -9,6 +9,9 @@ from notification.models import (
 )
 from notification.serializers import LINK_MAPPING, NotificationContentSerializer
 from user.models import User
+from utils import get_logger
+
+log = get_logger(__name__)
 
 
 # TODO: Refactor this code
@@ -24,7 +27,8 @@ class AdminNotificationManager:
         )
         for user in User.objects.filter(
             is_staff=True, fcmtoken__device_type=FCMToken.DeviceType.WEB
-        ):
+        ).distinct():
+            log.debug(user)
             Notification.objects.create(recipient=user, content=notification_content)
         message.send_notification_to_admin(
             title=f'{request.user.__str__()} {notification_content.get_entity_type_display().lower()}: "{feedback.__str__()}".',
@@ -48,7 +52,8 @@ class AdminNotificationManager:
         )
         for user in User.objects.filter(
             is_staff=True, fcmtoken__device_type=FCMToken.DeviceType.WEB
-        ):
+        ).distinct():
+            log.debug(user)
             Notification.objects.create(recipient=user, content=notification_content)
         message.send_notification_to_admin(
             title=f"{request.user.__str__()} {notification_content.get_entity_type_display().lower()} {service_registration.service.get_service_id_display().lower()}.",
