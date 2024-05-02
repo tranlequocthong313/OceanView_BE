@@ -54,14 +54,24 @@ class AccessCardServiceRegistrationSerializer(serializers.ModelSerializer):
         fields = ["service", "relative", "status"]
 
 
-class ParkingCardServiceRegistrationSerializer(AccessCardServiceRegistrationSerializer):
-    vehicle = VehicleSerializer(write_only=True)
+class ResidentCardServiceRegistrationSerializer(
+    AccessCardServiceRegistrationSerializer
+):
     room_number = serializers.CharField(write_only=True)
 
     class Meta:
+        model = AccessCardServiceRegistrationSerializer.Meta.model
+        fields = AccessCardServiceRegistrationSerializer.Meta.fields + ["room_number"]
+
+
+class ParkingCardServiceRegistrationSerializer(
+    ResidentCardServiceRegistrationSerializer
+):
+    vehicle = VehicleSerializer(write_only=True)
+
+    class Meta:
         model = models.Vehicle
-        fields = AccessCardServiceRegistrationSerializer.Meta.fields + [
-            "room_number",
+        fields = ResidentCardServiceRegistrationSerializer.Meta.fields + [
             "vehicle",
         ]
 

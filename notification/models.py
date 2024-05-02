@@ -24,6 +24,7 @@ class FCMToken(MyBaseModel):
 class NotificationContent(MyBaseModel):
     class EntityType(models.TextChoices):
         SERVICE_REGISTER = "SERVICE_REGISTER", _("Đăng ký dịch vụ")
+        SERVICE_REISSUE = "SERVICE_REISSUE", _("Cấp lại")
         FEEDBACK_POST = "FEEDBACK_POST", _("Đăng phản ánh")
 
     entity_type = models.CharField(

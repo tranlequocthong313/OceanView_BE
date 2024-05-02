@@ -2,11 +2,11 @@ from cloudinary.models import CloudinaryField
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
-from app.models import MyBaseModel
+from app.models import MyBaseModelWithDeletedState
 from user.models import User
 
 
-class Feedback(MyBaseModel):
+class Feedback(MyBaseModelWithDeletedState):
     class FeedbackType(models.TextChoices):
         QUESTION = "QUESTION", _("Thắc mắc")
         COMPLAIN = "COMPLAIN", _("Phàn nàn")
@@ -19,7 +19,6 @@ class Feedback(MyBaseModel):
         verbose_name=_("Loại"), max_length=10, choices=FeedbackType.choices
     )
     image = CloudinaryField(_("Ảnh"), null=True, blank=True)
-    deleted = models.BooleanField(verbose_name=_("Đã xóa"), default=False)
     author = models.ForeignKey(
         verbose_name=_("Tác giả"), to=User, on_delete=models.CASCADE
     )
@@ -30,14 +29,6 @@ class Feedback(MyBaseModel):
     class Meta:
         verbose_name = _("Phản ánh")
         verbose_name_plural = _("Phản ánh")
-
-    def unsoft_delete(self):
-        self.deleted = False
-        self.save()
-
-    def soft_delete(self):
-        self.deleted = True
-        self.save()
 
     @property
     def image_url(self):
