@@ -8,3 +8,18 @@ class MyBaseModel(models.Model):
 
     class Meta:
         abstract = True
+
+
+class MyBaseModelWithDeletedState(MyBaseModel):
+    deleted = models.BooleanField(_("Đã bị xóa"), default=False)
+
+    def unsoft_delete(self):
+        self.deleted = False
+        self.save()
+
+    def soft_delete(self):
+        self.deleted = True
+        self.save()
+
+    class Meta:
+        abstract = True

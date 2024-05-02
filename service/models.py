@@ -7,7 +7,7 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 
 from apartment.models import Apartment
-from app.models import MyBaseModel
+from app.models import MyBaseModel, MyBaseModelWithDeletedState
 from user.models import PersonalInformation
 
 
@@ -70,7 +70,7 @@ class Relative(MyBaseModel):
         return self.personal_information.__str__()
 
 
-class ServiceRegistration(MyBaseModel):
+class ServiceRegistration(MyBaseModelWithDeletedState):
     class Status(models.TextChoices):
         WAITING_FOR_APPROVAL = "WAITING_FOR_APPROVAL", _("Chờ được xét duyệt")
         APPROVED = "APPROVED", _("Đã được duyệt")
@@ -96,6 +96,13 @@ class ServiceRegistration(MyBaseModel):
         choices=Status,
         default=Status.WAITING_FOR_APPROVAL,
     )
+    apartment = models.ForeignKey(
+        verbose_name=_("Căn hộ"),
+        to=Apartment,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+    )
 
     def message_service_register(self, action):
         return f"{self.resident.__str__()} {action} {self.service.get_service_id_display().lower()}."
@@ -108,6 +115,10 @@ class ServiceRegistration(MyBaseModel):
         self.status = ServiceRegistration.Status.CANCELED
         self.save()
         return True
+
+    @property
+    def is_approved(self):
+        return self.status == ServiceRegistration.Status.APPROVED
 
     @property
     def is_canceled(self):
@@ -150,9 +161,6 @@ class Vehicle(MyBaseModel):
         to=ServiceRegistration,
         on_delete=models.CASCADE,
     )
-    apartment = models.ForeignKey(
-        verbose_name=_("Căn hộ"), to=Apartment, on_delete=models.CASCADE
-    )
 
     class Meta:
         verbose_name = _("Phương tiện")
@@ -163,7 +171,7 @@ class Vehicle(MyBaseModel):
         return dict(cls.VehicleType.choices)[vehicle_type]
 
     def __str__(self) -> str:
-        return f"{self.apartment} - {Vehicle.get_vehicle_type_label(self.vehicle_type)} - {self.license_plate or ''}"
+        return f"{Vehicle.get_vehicle_type_label(self.vehicle_type)} - {self.license_plate or ''}"
 
     @classmethod
     def get_service_id(cls, vehicle_type):
@@ -173,3 +181,27 @@ class Vehicle(MyBaseModel):
             cls.VehicleType.CAR: Service.ServiceType.CAR_PARKING_CARD,
         }
         return SERVICE_IDS[vehicle_type]
+
+
+class ReissueCard(MyBaseModelWithDeletedState):
+    service_registration = models.ForeignKey(
+        verbose_name=_("Đăng ký dịch vụ"),
+        to=ServiceRegistration,
+        on_delete=models.CASCADE,
+    )
+    status = models.CharField(
+        _("Trạng thái"),
+        max_length=30,
+        choices=ServiceRegistration.Status.choices,
+        default=ServiceRegistration.Status.WAITING_FOR_APPROVAL,
+    )
+
+    def message_service_reissue(self, action):
+        return f"{self.service_registration.resident.__str__()} {action} {self.service_registration.service.get_service_id_display()}."
+
+    class Meta:
+        verbose_name = _("Cấp  lại thẻ")
+        verbose_name_plural = _("Cấp  lại thẻ")
+
+    def __str__(self) -> str:
+        return self.service_registration.__str__()

@@ -14,10 +14,11 @@ from rest_framework.viewsets import ReadOnlyModelViewSet
 
 from notification.manager import AdminNotificationManager
 from user.models import PersonalInformation
+from user.permissions import IsOwner
 from utils import get_logger
 
 from . import serializers, swaggers
-from .models import Relative, Service, ServiceRegistration, Vehicle
+from .models import ReissueCard, Relative, Service, ServiceRegistration, Vehicle
 
 log = get_logger(__name__)
 
@@ -33,7 +34,9 @@ class ServiceRegistrationView(DestroyAPIView, ReadOnlyModelViewSet):
     }
 
     def get_queryset(self):
-        queryset = ServiceRegistration.objects.filter(resident=self.request.user).all()
+        queryset = ServiceRegistration.objects.filter(
+            resident=self.request.user, deleted=False
+        ).all()
 
         if self.action == "list":
             category = self.request.query_params.get("category")
@@ -58,9 +61,9 @@ class ServiceRegistrationView(DestroyAPIView, ReadOnlyModelViewSet):
 
         return queryset
 
-    def registered_service(self, service_id, citizen_id):
+    def registered_service(self, service_id, personal_information):
         return ServiceRegistration.objects.filter(
-            service_id=service_id, personal_information__citizen_id=citizen_id
+            service_id=service_id, personal_information=personal_information
         ).exists()
 
     def get_serializer_class(self):
@@ -137,7 +140,7 @@ class ServiceRegistrationView(DestroyAPIView, ReadOnlyModelViewSet):
             log.info(f"Added {request.user} to {relative}'s relatives")
             if self.registered_service(
                 service_id=Service.ServiceType.ACCESS_CARD,
-                citizen_id=personal_information.citizen_id,
+                personal_information=personal_information,
             ):
                 log.error(f"{relative} has registered for an access card")
                 return Response(
@@ -161,9 +164,97 @@ class ServiceRegistrationView(DestroyAPIView, ReadOnlyModelViewSet):
                 "Something went wrong", status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
+    @extend_schema(**swaggers.SERVICE_RESIDENT_CARD)
+    @action(
+        methods=["post"],
+        url_path="resident-cards",
+        detail=False,
+        serializer_class=serializers.ResidentCardServiceRegistrationSerializer,
+    )
+    @transaction.atomic
+    def resident_card(self, request):
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        relative_data = serializer.validated_data.get("relative")
+        personal_information_data = relative_data.get("personal_information")
+
+        try:
+            room_number = serializer.validated_data["room_number"]
+            if not request.user.apartment_set.filter(room_number=room_number).exists():
+                log.error(f"{request.user} doesn't live in {room_number} room")
+                return Response(
+                    "This apartment does not belong to you, so you cannot register for a parking card",
+                    status=status.HTTP_403_FORBIDDEN,
+                )
+
+            personal_information = PersonalInformation.objects.filter(
+                Q(citizen_id=personal_information_data["citizen_id"])
+                | Q(phone_number=personal_information_data["phone_number"])
+            ).first()
+
+            if personal_information is None:
+                personal_information = PersonalInformation.objects.create(
+                    **personal_information_data
+                )
+                log.info("Created new personal information")
+
+            relative = Relative.objects.filter(
+                personal_information__citizen_id=personal_information.citizen_id,
+            ).first()
+            if relative is None:
+                relative = Relative.objects.create(
+                    relationship=relative_data.get("relationship", None),
+                    personal_information=personal_information,
+                )
+                log.info("Created new relative")
+            relative.residents.add(request.user)
+            log.info(f"Added {request.user} to {relative}'s relatives")
+
+            if (
+                ServiceRegistration.objects.filter(
+                    apartment_id=room_number,
+                    service__pk=Service.ServiceType.RESIDENT_CARD,
+                ).count()
+                >= 4
+            ):
+                log.error(
+                    "The apartment has been registered with a maximum of 4 resident cards"
+                )
+                return Response(
+                    "The apartment has been registered with a maximum of 4 resident cards",
+                    status.HTTP_400_BAD_REQUEST,
+                )
+
+            if self.registered_service(
+                service_id=Service.ServiceType.RESIDENT_CARD,
+                personal_information=personal_information,
+            ):
+                log.error(f"{relative} has registered for a resident card")
+                return Response(
+                    "This person has registered for a resident card",
+                    status.HTTP_400_BAD_REQUEST,
+                )
+
+            service_registration = ServiceRegistration.objects.create(
+                service_id=Service.ServiceType.RESIDENT_CARD,
+                personal_information=personal_information,
+                resident=request.user,
+                apartment_id=room_number,
+            )
+            AdminNotificationManager.create_notification_for_service_registration(
+                request, service_registration
+            )
+            log.info(f"{relative} registered successfully")
+            return Response(self.serializer_class(service_registration).data)
+        except Exception:
+            log.error("Server error", traceback.format_exc())
+            return Response(
+                "Something went wrong", status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
     def is_valid_vehicle_limit(self, apartment_id, vehicle_type):
         vehicle_count = Vehicle.objects.filter(
-            apartment_id=apartment_id, vehicle_type=vehicle_type
+            service_registration__apartment_id=apartment_id, vehicle_type=vehicle_type
         ).count()
 
         return vehicle_count < self.max_vehicle_counts[vehicle_type]
@@ -176,12 +267,6 @@ class ServiceRegistrationView(DestroyAPIView, ReadOnlyModelViewSet):
     )
     @transaction.atomic
     def parking_card(self, request):
-        if request.user.apartment_set.count() == 0:
-            log.error(f"{request.user} doesn't live in an apartment")
-            return Response(
-                "You don't live in an apartment, so you don't have the right to register for a parking card",
-                status.HTTP_403_FORBIDDEN,
-            )
         serializer = serializers.ParkingCardServiceRegistrationSerializer(
             data=request.data
         )
@@ -226,7 +311,6 @@ class ServiceRegistrationView(DestroyAPIView, ReadOnlyModelViewSet):
                     license_plate=vehicle["license_plate"],
                     vehicle_type=vehicle["vehicle_type"],
                     service_registration=service_registration,
-                    apartment_id=room_number,
                 )
                 log.info(f"Registered {request.user} successfully")
             else:
@@ -258,12 +342,12 @@ class ServiceRegistrationView(DestroyAPIView, ReadOnlyModelViewSet):
                     service_id=service_id,
                     personal_information=personal_information,
                     resident=request.user,
+                    apartment_id=room_number,
                 )
                 Vehicle.objects.create(
                     license_plate=vehicle["license_plate"],
                     vehicle_type=vehicle["vehicle_type"],
                     service_registration=service_registration,
-                    apartment_id=room_number,
                 )
                 log.info(f"Registered for {relative} successfully")
             AdminNotificationManager.create_notification_for_service_registration(
@@ -275,3 +359,39 @@ class ServiceRegistrationView(DestroyAPIView, ReadOnlyModelViewSet):
             return Response(
                 "Something went wrong", status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
+    @extend_schema(**swaggers.SERVICE_REISSUE)
+    @action(
+        methods=["post"],
+        url_path="reissue",
+        detail=True,
+        permission_classes=[IsOwner],
+    )
+    @transaction.atomic
+    def reissue(self, request, pk=None):
+        if self.get_object().service.pk.find("CARD") == -1:
+            log.error("This service does not support physical card")
+            return Response(
+                "This service does not support physical card",
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if self.get_object().is_approved is False:
+            log.error("This service is not being approved")
+            return Response(
+                "This service is not being approved",
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        obj, created = ReissueCard.objects.get_or_create(
+            service_registration=self.get_object()
+        )
+        if created is False:
+            log.error("This have been reissued or it's being waited for approval")
+            return Response(
+                "You have reissued this service or it's being rejected, canceled, pending",
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        AdminNotificationManager.create_notification_for_service_reissue(request, obj)
+        log.info(f"Make reissue request for {request.user.__str__()} successfully")
+        return Response(
+            "Requested successfully. Waiting for approval", status.HTTP_201_CREATED
+        )

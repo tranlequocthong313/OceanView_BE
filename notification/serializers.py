@@ -2,7 +2,7 @@ from rest_framework import serializers
 
 from app import settings
 from feedback.models import Feedback
-from service.models import ServiceRegistration
+from service.models import ReissueCard, ServiceRegistration
 
 from .models import FCMToken, Notification, NotificationContent
 
@@ -36,6 +36,7 @@ class FCMTokenSerializer(serializers.ModelSerializer):
 
 ENTITY_TYPE_MODEL_MAPPING = {
     "SERVICE_REGISTER": ServiceRegistration,
+    "SERVICE_REISSUE": ReissueCard,
     "FEEDBACK_POST": Feedback,
 }
 
@@ -45,6 +46,10 @@ ACTION_MESSAGE_MAPPING = {
     ),
     "SERVICE_REGISTER": lambda entity,
     notification_content: entity.message_service_register(
+        notification_content.get_entity_type_display().lower()
+    ),
+    "SERVICE_REISSUE": lambda entity,
+    notification_content: entity.message_service_reissue(
         notification_content.get_entity_type_display().lower()
     ),
 }
@@ -105,6 +110,7 @@ class ClientNotificationSerializer(serializers.ModelSerializer):
 
 LINK_MAPPING = {
     "SERVICE_REGISTER": lambda entity_id: f"{settings.HOST}/admin/service/serviceregistration/{entity_id}/change/",
+    "SERVICE_REISSUE": lambda entity_id: f"{settings.HOST}/admin/service/reissuecard/{entity_id}/change/",
     "FEEDBACK_POST": lambda entity_id: f"{settings.HOST}/admin/feedback/feedback/{entity_id}/change/",
 }
 

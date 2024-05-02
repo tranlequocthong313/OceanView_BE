@@ -1,5 +1,7 @@
-from django.apps import apps
+from typing import Any
+
 from django.contrib import admin
+from django.http import HttpRequest
 from django.utils.html import mark_safe
 
 from app.admin import admin_site
@@ -26,8 +28,14 @@ class FeedbackAdmin(admin.ModelAdmin):
         "image",
         "deleted",
     ]
+    exclude = ("delete",)
 
     def has_add_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(
+        self, request: HttpRequest, obj: Any | None = ...
+    ) -> bool:
         return False
 
     @admin.display(description="Ảnh")

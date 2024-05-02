@@ -1,10 +1,14 @@
+from typing import Any
+
 from django.contrib import admin
+from django.http import HttpRequest
 from django.utils.translation import gettext_lazy as _
 
 from app.admin import MyBaseModelAdmin, admin_site
 from utils import format
 
 from .models import (
+    ReissueCard,
     Relative,
     Service,
     ServiceRegistration,
@@ -54,6 +58,7 @@ class ServiceRegistrationAdmin(MyBaseModelAdmin):
         "service",
         "personal_information",
         "resident",
+        "apartment",
         "status",
     )
     search_fields = (
@@ -63,11 +68,45 @@ class ServiceRegistrationAdmin(MyBaseModelAdmin):
         "personal_information__phone_number",
         "personal_information__email",
         "resident__resident_id",
+        "apartment__pk",
         "status",
     )
+    exclude = ("deleted",)
     list_filter = ("status",)
 
     def has_add_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(
+        self, request: HttpRequest, obj: Any | None = ...
+    ) -> bool:
+        return False
+
+
+class ReissueCardAdmin(MyBaseModelAdmin):
+    list_display = (
+        "id",
+        "service_registration",
+        "status",
+    )
+    search_fields = (
+        "id",
+        "service_registration__personal_information__citizen_id",
+        "service_registration__personal_information__full_name",
+        "service_registration__personal_information__phone_number",
+        "service_registration__personal_information__email",
+        "service_registration__resident__resident_id",
+        "status",
+    )
+    exclude = ("deleted",)
+    list_filter = ("status",)
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(
+        self, request: HttpRequest, obj: Any | None = ...
+    ) -> bool:
         return False
 
 
@@ -76,12 +115,10 @@ class VehicleAdmin(MyBaseModelAdmin):
         "id",
         "license_plate",
         "vehicle_type",
-        "apartment",
     )
     search_fields = (
         "license_plate",
         "vehicle_type",
-        "apartment__room_number",
     )
     list_filter = ("vehicle_type",)
 
@@ -93,3 +130,4 @@ admin_site.register(Relative, RelativeAdmin)
 admin_site.register(Vehicle, VehicleAdmin)
 admin_site.register(Service, ServiceAdmin)
 admin_site.register(ServiceRegistration, ServiceRegistrationAdmin)
+admin_site.register(ReissueCard, ReissueCardAdmin)

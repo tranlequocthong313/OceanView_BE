@@ -491,8 +491,14 @@
             has_been_read: false,
             content: JSON.parse(payload?.data?.content),
           };
-          notifications.unshift(notification);
-          renderNotifications(Number(badge.textContent) + 1);
+          if (
+            !notifications.some(
+              (n) => n?.content?.id === notification?.content?.id
+            )
+          ) {
+            notifications.unshift(notification);
+            renderNotifications(Number(badge.textContent) + 1);
+          }
         }
       }
 
