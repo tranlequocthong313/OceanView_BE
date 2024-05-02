@@ -385,7 +385,7 @@
             notificationList.appendChild(li);
           });
 
-          if (nextPageUrl) {
+          if (notifications.length > 5 || nextPageUrl) {
             notificationList.style.maxHeight = '500px';
             notificationList.style.overflowY = 'auto';
             notificationList.addEventListener('scroll', function () {
