@@ -1,7 +1,7 @@
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiExample, OpenApiParameter
 
-from invoice.models import Invoice
+from invoice.models import Invoice, Payment
 from invoice.serializers import InvoiceSerializer
 from utils import format
 
@@ -24,14 +24,14 @@ INVOICE_LIST = {
         OpenApiExample(
             "Example",
             value={
-                "id": "INV043923",
-                "created_date": "2024-04-19T16:26:37.203Z",
-                "updated_date": "2024-04-19T16:26:37.204Z",
-                "amount": "5350000",
-                "due_date": "2024-04-19",
-                "payment_status": format.format_enum_values(Invoice.PaymentStatus),
-                "resident": "240269",
-                "invoice_type": 1,
+                "2024": [
+                    {
+                        "id": "INV043923",
+                        "created_date": "2024-04-19T16:26:37.203Z",
+                        "total_amount": "5350000",
+                        "status": format.format_enum_values(Invoice.InvoiceStatus),
+                    }
+                ]
             },
             response_only=True,
         )
@@ -48,12 +48,11 @@ INVOICE_RETRIEVE = {
             value={
                 "id": "INV043923",
                 "created_date": "2024-04-19T16:26:37.203Z",
-                "updated_date": "2024-04-19T16:26:37.204Z",
-                "amount": "5350000",
-                "due_date": "2024-04-19",
-                "payment_status": format.format_enum_values(Invoice.PaymentStatus),
-                "resident": "240269",
-                "invoice_type": 1,
+                "total_amount": "5350000",
+                "status": format.format_enum_values(Invoice.InvoiceStatus),
+                "invoicedetail_set": [
+                    {"service_name": "The gui xe", "amount": "520646"}
+                ],
             },
             response_only=True,
         )

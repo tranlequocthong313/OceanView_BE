@@ -41,15 +41,15 @@ class ServiceAdmin(MyBaseModelAdmin):
     formatted_price.short_description = "Giá"
 
     list_display = (
-        "service_id",
+        "id",
         "name",
         "formatted_price",
     )
     search_fields = (
-        "service_id",
+        "id",
         "name",
     )
-    list_filter = ("service_id",)
+    list_filter = ("id",)
 
 
 class ServiceRegistrationAdmin(MyBaseModelAdmin):

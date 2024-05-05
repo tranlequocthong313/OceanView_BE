@@ -1,3 +1,6 @@
+from django.contrib import admin
+from django.utils.html import mark_safe
+
 from app.admin import MyBaseModelAdmin, admin_site
 from utils import format, get_logger
 
@@ -6,15 +9,9 @@ from . import models
 log = get_logger(__name__)
 
 
-class InvoiceTypeAdmin(MyBaseModelAdmin):
-    list_display = ("name", "description")
-    search_fields = ("name", "description")
-    list_filter = ("name",)
-
-
 class InvoiceAdmin(MyBaseModelAdmin):
     def formatted_amount(self, obj):
-        return format.format_currency(obj.amount)
+        return format.format_currency(obj.total_amount)
 
     formatted_amount.short_description = "Tổng cộng"
 
@@ -23,33 +20,118 @@ class InvoiceAdmin(MyBaseModelAdmin):
         "formatted_amount",
         "due_date",
         "resident",
-        "payment_status",
-        "invoice_type",
-    )
-    search_fields = ("id", "payment_status")
-    exclude = (
-        "id",
-        "payment_status",
-    )
-
-
-class InvoiceDetailAdmin(MyBaseModelAdmin):
-    list_display = (
-        "id",
-        "payment_method",
-        "transaction_code",
-        "payment_proof",
-        "invoice",
     )
     search_fields = (
         "id",
-        "payment_method",
-        "transaction_code",
+        "resident__pk",
+        "resident__personal_information__full_name",
+        "resident__personal_information__email",
+        "resident__personal_information__phone_number",
+    )
+    exclude = ("id",)
+    exclude = ("deleted",)
+
+
+class InvoiceDetailAdmin(MyBaseModelAdmin):
+    list_display = ("id", "service_registration", "invoice", "amount")
+    search_fields = (
+        "id",
+        "service_registration__service__name",
+        "service_registration__service__id",
+        "invoice__id",
+        "amount",
+    )
+    list_filter = ("service_registration__service__id",)
+    exclude = ("deleted",)
+
+
+class PaymentAdmin(MyBaseModelAdmin):
+    list_display = (
+        "id",
+        "method",
+        "status",
+        "invoice",
+        "total_amount",
+    )
+    readonly_fields = (
+        "id",
+        "method",
+        "invoice",
+        "total_amount",
+    )
+    search_fields = (
+        "id",
+        "method",
+        "status",
+        "total_amount",
         "invoice__id",
     )
-    list_filter = ("payment_method",)
+    list_filter = (
+        "method",
+        "status",
+    )
+    exclude = ("deleted",)
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
 
 
-admin_site.register(models.InvoiceType, InvoiceTypeAdmin)
+class OnlineWalletAdmin(MyBaseModelAdmin):
+    list_display = (
+        "id",
+        "transaction_code",
+        "payment",
+    )
+    search_fields = (
+        "id",
+        "transaction_code",
+        "payment__status",
+    )
+    list_filter = ("payment__status",)
+    exclude = ("deleted",)
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+
+class ProofImageAdmin(MyBaseModelAdmin):
+    list_display = (
+        "id",
+        "payment",
+    )
+    search_fields = (
+        "id",
+        "payment__status",
+    )
+    readonly_fields = ("_image",)
+    list_filter = ("payment__status",)
+    exclude = ("deleted",)
+
+    @admin.display(description="Ảnh")
+    def _image(self, obj):
+        return mark_safe(f'<img width="500" src="{obj.image_url}" />')
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+
 admin_site.register(models.Invoice, InvoiceAdmin)
 admin_site.register(models.InvoiceDetail, InvoiceDetailAdmin)
+admin_site.register(models.Payment, PaymentAdmin)
+admin_site.register(models.ProofImage, ProofImageAdmin)
+admin_site.register(models.OnlineWallet, OnlineWalletAdmin)

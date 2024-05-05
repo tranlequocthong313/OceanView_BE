@@ -54,6 +54,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "django_crontab",
     "rest_framework",
     "drf_spectacular",
     "drf_spectacular_sidecar",
@@ -293,3 +294,8 @@ firebase_credentials = {
 }
 cred = credentials.Certificate(firebase_credentials)
 FIREBASE_ADMIN = initialize_app(cred)
+
+
+CRONJOBS = [
+    # ("*/1 * * * *", "invoice.tasks.create_invoices"),
+]

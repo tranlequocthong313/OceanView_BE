@@ -18,8 +18,9 @@ class Service(MyBaseModel):
         BICYCLE_PARKING_CARD = "BICYCLE_PARKING_CARD", _("Thẻ gửi xe đạp")
         MOTOR_PARKING_CARD = "MOTOR_PARKING_CARD", _("Thẻ gửi xe máy")
         CAR_PARKING_CARD = "CAR_PARKING_CARD", _("Thẻ gửi xe ô tô")
+        MANAGING = "MANAGING", _("Quản lý")
 
-    service_id = models.CharField(
+    id = models.CharField(
         verbose_name=_("Mã dịch vụ"),
         primary_key=True,
         max_length=30,
@@ -36,6 +37,12 @@ class Service(MyBaseModel):
     class Meta:
         verbose_name = _("Dịch vụ")
         verbose_name_plural = _("Dịch vụ")
+
+    @classmethod
+    def monthly_services(cls):
+        return cls.parking_services + [
+            Service.ServiceType.MANAGING,
+        ]
 
     @classmethod
     def parking_services(cls):
@@ -105,7 +112,7 @@ class ServiceRegistration(MyBaseModelWithDeletedState):
     )
 
     def message_service_register(self, action):
-        return f"{self.resident.__str__()} {action} {self.service.get_service_id_display().lower()}."
+        return f"{self.resident.__str__()} {action} {self.service.get_id_display().lower()}."
 
     class Meta:
         verbose_name = _("Đăng ký dịch vụ")
@@ -175,12 +182,12 @@ class Vehicle(MyBaseModel):
 
     @classmethod
     def get_service_id(cls, vehicle_type):
-        SERVICE_IDS = {
+        idS = {
             cls.VehicleType.BICYCLE: Service.ServiceType.BICYCLE_PARKING_CARD,
             cls.VehicleType.MOTORBIKE: Service.ServiceType.MOTOR_PARKING_CARD,
             cls.VehicleType.CAR: Service.ServiceType.CAR_PARKING_CARD,
         }
-        return SERVICE_IDS[vehicle_type]
+        return idS[vehicle_type]
 
 
 class ReissueCard(MyBaseModelWithDeletedState):
@@ -197,7 +204,7 @@ class ReissueCard(MyBaseModelWithDeletedState):
     )
 
     def message_service_reissue(self, action):
-        return f"{self.service_registration.resident.__str__()} {action} {self.service_registration.service.get_service_id_display()}."
+        return f"{self.service_registration.resident.__str__()} {action} {self.service_registration.service.get_id_display()}."
 
     class Meta:
         verbose_name = _("Cấp  lại thẻ")

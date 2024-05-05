@@ -23,6 +23,7 @@ from .models import ReissueCard, Relative, Service, ServiceRegistration, Vehicle
 log = get_logger(__name__)
 
 
+# TODO: Refactor this code
 class ServiceRegistrationView(DestroyAPIView, ReadOnlyModelViewSet):
     serializer_class = serializers.AccessCardServiceRegistrationSerializer
     permission_classes = [IsAuthenticated]
@@ -44,12 +45,8 @@ class ServiceRegistrationView(DestroyAPIView, ReadOnlyModelViewSet):
             exclude_status = self.request.query_params.get("_status")
 
             categories = {
-                "access": queryset.filter(
-                    service__service_id=Service.ServiceType.ACCESS_CARD
-                ),
-                "parking": queryset.filter(
-                    service__service_id__in=Service.parking_services()
-                ),
+                "access": queryset.filter(service__id=Service.ServiceType.ACCESS_CARD),
+                "parking": queryset.filter(service__id__in=Service.parking_services()),
             }
 
             if category and category in categories:

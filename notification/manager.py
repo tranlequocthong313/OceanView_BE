@@ -56,7 +56,7 @@ class AdminNotificationManager:
             log.debug(user)
             Notification.objects.create(recipient=user, content=notification_content)
         message.send_notification_to_admin(
-            title=f"{request.user.__str__()} {notification_content.get_entity_type_display().lower()} {service_registration.service.get_service_id_display().lower()}.",
+            title=f"{request.user.__str__()} {notification_content.get_entity_type_display().lower()} {service_registration.service.get_id_display().lower()}.",
             link=LINK_MAPPING[notification_content.entity_type](
                 service_registration.pk
             ),
@@ -83,8 +83,33 @@ class AdminNotificationManager:
             log.debug(user)
             Notification.objects.create(recipient=user, content=notification_content)
         message.send_notification_to_admin(
-            title=f"{request.user.__str__()} {notification_content.get_entity_type_display().lower()} {reissue.service_registration.service.get_service_id_display()}.",
+            title=f"{request.user.__str__()} {notification_content.get_entity_type_display().lower()} {reissue.service_registration.service.get_id_display()}.",
             link=LINK_MAPPING[notification_content.entity_type](reissue.pk),
+            request=request,
+            data={
+                "content": json.dumps(
+                    NotificationContentSerializer(notification_content).data
+                ),
+            },
+        )
+
+    @staticmethod
+    def create_notification_for_proof_image(request, proof_image):
+        notification_content = NotificationContent.objects.create(
+            entity_id=proof_image.pk,
+            entity_type=NotificationContent.EntityType.INVOICE_PROOF_IMAGE_PAYMENT,
+        )
+        NotificationSender.objects.create(
+            sender=request.user, content=notification_content
+        )
+        for user in User.objects.filter(
+            is_staff=True, fcmtoken__device_type=FCMToken.DeviceType.WEB
+        ).distinct():
+            log.debug(user)
+            Notification.objects.create(recipient=user, content=notification_content)
+        message.send_notification_to_admin(
+            title=f"{request.user.__str__()} {notification_content.get_entity_type_display().lower()} {proof_image.payment.get_method_display()}.",
+            link=LINK_MAPPING[notification_content.entity_type](proof_image.pk),
             request=request,
             data={
                 "content": json.dumps(

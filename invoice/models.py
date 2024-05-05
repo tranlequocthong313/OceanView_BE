@@ -2,27 +2,17 @@ from cloudinary.models import CloudinaryField
 from django.contrib.auth import get_user_model
 from django.core.validators import MinValueValidator
 from django.db import models
+from django.db.models.base import post_save
 from django.db.models.signals import pre_save
 from django.dispatch import receiver
 from django.utils.translation import gettext_lazy as _
 
-from app.models import MyBaseModel
+from app.models import MyBaseModel, MyBaseModelWithDeletedState
+from service.models import ServiceRegistration
 
 
-class InvoiceType(MyBaseModel):
-    name = models.CharField(_("Tên loại hóa đơn"), max_length=50)
-    description = models.CharField(_("Mô tả"), max_length=50, null=True, blank=True)
-
-    class Meta:
-        verbose_name = _("Loại hóa đơn")
-        verbose_name_plural = _("Loại hóa đơn")
-
-    def __str__(self) -> str:
-        return self.name
-
-
-class Invoice(MyBaseModel):
-    class PaymentStatus(models.TextChoices):
+class Invoice(MyBaseModelWithDeletedState):
+    class InvoiceStatus(models.TextChoices):
         PENDING = "PENDING", _("Chờ thanh toán")
         PAID = "PAID", _("Đã thanh toán")
         OVERDUE = "OVERDUE", _("Quá hạn")
@@ -31,61 +21,138 @@ class Invoice(MyBaseModel):
     resident = models.ForeignKey(
         to=get_user_model(), verbose_name=_("Cư dân"), on_delete=models.CASCADE
     )
-    amount = models.DecimalField(
-        _("Số tiền"), max_digits=11, decimal_places=2, validators=[MinValueValidator(0)]
+    total_amount = models.DecimalField(
+        _("Số tiền"),
+        max_digits=11,
+        decimal_places=2,
+        validators=[MinValueValidator(0)],
+        default=0,
     )
     due_date = models.DateField(_("Ngày đáo hạn"))
-    payment_status = models.CharField(
+    status = models.CharField(
         _("Trạng thái thanh toán"),
         max_length=10,
-        choices=PaymentStatus.choices,
-        default="PENDING",
-    )
-    invoice_type = models.ForeignKey(
-        verbose_name=_("Loại hóa đơn"),
-        to=InvoiceType,
-        on_delete=models.SET_NULL,
-        null=True,
+        choices=InvoiceStatus.choices,
+        default=InvoiceStatus.PENDING,
     )
 
-    class Meta:
+    class Meta(MyBaseModel.Meta):
         verbose_name = _("Hóa đơn")
         verbose_name_plural = _("Hóa đơn")
 
+    def pay(self):
+        self.status = Invoice.InvoiceStatus.PAID
+        self.save()
+
     def __str__(self):
-        return f"{self.id}"
+        return str(self.id)
 
 
-class InvoiceDetail(MyBaseModel):
-    class PAYMENT_METHODS(models.TextChoices):
-        E_WALLET = "E_WALLET", _("Ví điện tử")
-        PROOF_IMAGE = "PROOF_IMAGE", _("Ủy nhiệm chi")
-
-    payment_method = models.CharField(
-        _("Phương thức thanh toán"), max_length=15, choices=PAYMENT_METHODS.choices
-    )
-    transaction_code = models.CharField(
-        _("Mã giao dịch"), max_length=49, null=True, blank=True
-    )
-    payment_proof = CloudinaryField(_("Ảnh chứng từ thanh toán"), null=True, blank=True)
-    invoice = models.OneToOneField(
+class InvoiceDetail(MyBaseModelWithDeletedState):
+    invoice = models.ForeignKey(
         verbose_name=_("Hóa đơn"),
         to=Invoice,
         on_delete=models.CASCADE,
     )
+    service_registration = models.ForeignKey(
+        verbose_name=_("Đăng ký dịch vụ"),
+        to=ServiceRegistration,
+        on_delete=models.DO_NOTHING,
+    )
+    amount = models.DecimalField(
+        _("Số tiền"), max_digits=11, decimal_places=2, validators=[MinValueValidator(0)]
+    )
 
-    class Meta:
+    class Meta(MyBaseModel.Meta):
         verbose_name = _("Chi tiết hóa đơn")
         verbose_name_plural = _("Chi tiết hóa đơn")
 
     def __str__(self):
-        return f"{self.id}"
+        return str(self.pk)
+
+
+class Payment(MyBaseModelWithDeletedState):
+    class PaymentStatus(models.TextChoices):
+        SUCCESS = "SUCCESS", _("Thành công")
+        CONFIRMING = "CONFIRMING", _("Đang xác nhận")
+        INVALID = "INVALID", _("Không hợp lệ")
+
+    class PaymentMethod(models.TextChoices):
+        ONLINE_WALLET = "E_WALLET", _("Ví điện tử")
+        PROOF_IMAGE = "PROOF_IMAGE", _("Ủy nhiệm chi")
+
+    method = models.CharField(
+        _("Phương thức thanh toán"), max_length=15, choices=PaymentMethod.choices
+    )
+    total_amount = models.DecimalField(
+        _("Số tiền"), max_digits=11, decimal_places=2, validators=[MinValueValidator(0)]
+    )
+    invoice = models.ForeignKey(
+        verbose_name=_("Hóa đơn"), to=Invoice, on_delete=models.DO_NOTHING
+    )
+    status = models.CharField(
+        verbose_name=_("Trạng thái"),
+        choices=PaymentStatus.choices,
+        default=PaymentStatus.CONFIRMING,
+        max_length=20,
+    )
+
+    @property
+    def is_success(self):
+        return self.status == Payment.PaymentStatus.SUCCESS
+
+    class Meta(MyBaseModel.Meta):
+        verbose_name = _("Thanh toán")
+        verbose_name_plural = _("Thanh toán")
+
+    def __str__(self):
+        return f"[{self.get_status_display()}] {self.get_method_display()}"
+
+
+class ProofImage(MyBaseModelWithDeletedState):
+    image = CloudinaryField(_("Ảnh chứng từ thanh toán"))
+    payment = models.ForeignKey(
+        verbose_name=_("Thanh toán"), to=Payment, on_delete=models.CASCADE
+    )
+
+    class Meta(MyBaseModel.Meta):
+        verbose_name = _("Ảnh chứng minh")
+        verbose_name_plural = _("Ảnh chứng minh")
+
+    def message_proof_image_created(self, action):
+        return f"{self.payment.invoice.resident} {action}: {self.payment.get_method_display()}"
+
+    @property
+    def image_url(self):
+        if self.image:
+            self.image.url_options.update({"secure": True})
+            return self.image.url
+        return None
+
+    def __str__(self):
+        return self.payment.__str__()
+
+
+class OnlineWallet(MyBaseModelWithDeletedState):
+    transaction_code = models.CharField(
+        _("Mã giao dịch"), max_length=49, null=True, blank=True
+    )
+    payment = models.ForeignKey(
+        verbose_name=_("Thanh toán"), to=Payment, on_delete=models.CASCADE
+    )
+
+    class Meta(MyBaseModel.Meta):
+        verbose_name = _("Thanh toán qua ví điện tử")
+        verbose_name_plural = _("Thanh toán qua ví điện tử")
+
+    def __str__(self):
+        return self.transaction_code
 
 
 """
 A signal receiver function to generate an invoice ID before saving the Invoice instance.
 
-This function listens for the pre-save signal of the Invoice model and generates a unique 
+This function listens for the pre-save signal of the Invoice model and generates a unique
 invoice ID if it does not already exist.
 
 Args:
@@ -107,3 +174,9 @@ def generate_invoice_id(sender, instance, **kwargs):
         else:
             new_invoice_number = 1
         instance.id = f"INV{new_invoice_number:06d}"
+
+
+@receiver(post_save, sender=Payment)
+def update_invoice_status(sender, instance, **kwargs):
+    if instance.is_success:
+        instance.invoice.pay()

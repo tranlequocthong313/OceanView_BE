@@ -2,6 +2,7 @@ from rest_framework import serializers
 
 from app import settings
 from feedback.models import Feedback
+from invoice.models import ProofImage
 from service.models import ReissueCard, ServiceRegistration
 
 from .models import FCMToken, Notification, NotificationContent
@@ -38,6 +39,7 @@ ENTITY_TYPE_MODEL_MAPPING = {
     "SERVICE_REGISTER": ServiceRegistration,
     "SERVICE_REISSUE": ReissueCard,
     "FEEDBACK_POST": Feedback,
+    "INVOICE_PROOF_IMAGE_PAYMENT": ProofImage,
 }
 
 ACTION_MESSAGE_MAPPING = {
@@ -50,6 +52,10 @@ ACTION_MESSAGE_MAPPING = {
     ),
     "SERVICE_REISSUE": lambda entity,
     notification_content: entity.message_service_reissue(
+        notification_content.get_entity_type_display().lower()
+    ),
+    "INVOICE_PROOF_IMAGE_PAYMENT": lambda entity,
+    notification_content: entity.message_proof_image_created(
         notification_content.get_entity_type_display().lower()
     ),
 }
@@ -112,6 +118,7 @@ LINK_MAPPING = {
     "SERVICE_REGISTER": lambda entity_id: f"{settings.HOST}/admin/service/serviceregistration/{entity_id}/change/",
     "SERVICE_REISSUE": lambda entity_id: f"{settings.HOST}/admin/service/reissuecard/{entity_id}/change/",
     "FEEDBACK_POST": lambda entity_id: f"{settings.HOST}/admin/feedback/feedback/{entity_id}/change/",
+    "INVOICE_PROOF_IMAGE_PAYMENT": lambda entity_id: f"{settings.HOST}/admin/invoice/proofimage/{entity_id}/change/",
 }
 
 
