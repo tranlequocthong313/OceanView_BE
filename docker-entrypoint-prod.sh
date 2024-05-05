@@ -19,6 +19,8 @@ python3 manage.py makemigrations
 python3 manage.py migrate
 python3 manage.py createcachetable
 python3 manage.py createdefaultdata
+python3 manage.py crontab add
+python manage.py crontab show
 # python -m gunicorn app.asgi:application -k uvicorn.workers.UvicornWorker
 
 

@@ -8,8 +8,8 @@ from . import models
 class ServiceSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Service
-        fields = ["service_id", "name", "price"]
-        read_only_fields = ["service_id", "name", "price"]
+        fields = ["id", "name", "price"]
+        read_only_fields = ["id", "name", "price"]
 
 
 class VehicleSerializer(serializers.ModelSerializer):

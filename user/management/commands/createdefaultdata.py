@@ -9,14 +9,13 @@ from apartment.models import (
     Building,
 )
 from app import settings
-from invoice.models import InvoiceType
 from service.models import Service
 from user.models import PersonalInformation, User
 
 """
 A management command to create default data for various models in the application.
 
-This command creates default data for models such as User, PersonalInformation, InvoiceType, Service, ApartmentBuilding, Building, ApartmentType, Apartment, and OAuth2 Application.
+This command creates default data for models such as User, PersonalInformation, Service, ApartmentBuilding, Building, ApartmentType, Apartment, and OAuth2 Application.
 
 Args:
     *args: Additional positional arguments.
@@ -45,45 +44,37 @@ class Command(BaseCommand):
             )
             self.stdout.write(self.style.SUCCESS("Created superuser"))
 
-        if InvoiceType.objects.count() == 0:
-            self.stdout.write(self.style.HTTP_INFO("Creating invoice types..."))
-            InvoiceType.objects.bulk_create(
-                [
-                    InvoiceType(name="Điện"),
-                    InvoiceType(name="Nước"),
-                    InvoiceType(name="Internet"),
-                    InvoiceType(name="Dịch vụ gửi xe"),
-                ],
-                ignore_conflicts=True,
-            )
-            self.stdout.write(self.style.SUCCESS("Created invoice types"))
-
         if Service.objects.count() == 0:
             self.stdout.write(self.style.HTTP_INFO("Creating services..."))
             Service.objects.bulk_create(
                 [
                     Service(
-                        service_id=Service.ServiceType.ACCESS_CARD,
+                        id=Service.ServiceType.MANAGING,
+                        name="Quản lý",
+                        price=150000,
+                    ),
+                    Service(
+                        id=Service.ServiceType.ACCESS_CARD,
                         name="Thẻ ra vào",
                         price=55000,
                     ),
                     Service(
-                        service_id=Service.ServiceType.RESIDENT_CARD,
+                        id=Service.ServiceType.RESIDENT_CARD,
                         name="Thẻ cư dân",
                         price=55000,
                     ),
                     Service(
-                        service_id=Service.ServiceType.BICYCLE_PARKING_CARD,
+                        id=Service.ServiceType.BICYCLE_PARKING_CARD,
                         name="Thẻ gửi xe đạp",
                         price=70000,
                     ),
                     Service(
-                        service_id=Service.ServiceType.MOTOR_PARKING_CARD,
+                        id=Service.ServiceType.MOTOR_PARKING_CARD,
                         name="Thẻ gửi xe máy",
                         price=200000,
                     ),
                     Service(
-                        service_id=Service.ServiceType.CAR_PARKING_CARD,
+                        id=Service.ServiceType.CAR_PARKING_CARD,
                         name="Thẻ gửi xe ô tô",
                         price=1500000,
                     ),

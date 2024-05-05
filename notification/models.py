@@ -26,6 +26,7 @@ class NotificationContent(MyBaseModel):
         SERVICE_REGISTER = "SERVICE_REGISTER", _("Đăng ký dịch vụ")
         SERVICE_REISSUE = "SERVICE_REISSUE", _("Cấp lại")
         FEEDBACK_POST = "FEEDBACK_POST", _("Đăng phản ánh")
+        INVOICE_PROOF_IMAGE_PAYMENT = "INVOICE_PROOF_IMAGE_PAYMENT", _("Thanh toán")
 
     entity_type = models.CharField(
         verbose_name=_("Loại thông báo"), choices=EntityType.choices, max_length=100

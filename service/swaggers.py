@@ -75,7 +75,7 @@ SERVICE_ACCESS_CARD = {
             "Example",
             value={
                 "service": {
-                    "service_id": format.format_enum_values(Service.ServiceType),
+                    "id": format.format_enum_values(Service.ServiceType),
                     "name": "Thẻ ra vào",
                     "price": "55000",
                 },
@@ -113,7 +113,7 @@ SERVICE_RESIDENT_CARD = {
             "Example",
             value={
                 "service": {
-                    "service_id": format.format_enum_values(Service.ServiceType),
+                    "id": format.format_enum_values(Service.ServiceType),
                     "name": "Thẻ cư dân",
                     "price": "55000",
                 },
@@ -155,7 +155,7 @@ SERVICE_PARKING_CARD = {
             "Example",
             value={
                 "service": {
-                    "service_id": format.format_enum_values(Service.ServiceType),
+                    "id": format.format_enum_values(Service.ServiceType),
                     "name": "Thẻ gửi xe",
                     "price": "250000",
                 },
