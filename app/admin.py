@@ -1,10 +1,14 @@
 from typing import Any
 
 from django.contrib import admin
+from django.contrib.auth import logout
 from django.core.handlers.wsgi import WSGIRequest
+from django.shortcuts import redirect
 from django.template.response import TemplateResponse
 
 from app import settings
+from firebase import topic
+from notification.models import FCMToken
 from utils import get_logger
 
 log = get_logger(__name__)
@@ -26,3 +30,18 @@ class MyBaseModelAdmin(admin.ModelAdmin):
 
 
 admin_site = MyAdminSite(name=settings.COMPANY_NAME)
+
+
+def logout_view(request):
+    user = request.user
+    logout(request)
+    response = redirect("/admin/")
+    fcm_token = request.COOKIES.get("fcm_token")
+    print(fcm_token)
+    FCMToken.objects.filter(
+        token=fcm_token, user=user, device_type=FCMToken.DeviceType.WEB
+    ).delete()
+    response.delete_cookie("fcm_token")
+    topic.unsubscribe_from_topic(fcm_tokens=fcm_token, topic="admin")
+
+    return response
