@@ -60,14 +60,19 @@ INSTALLED_APPS = [
     "drf_spectacular_sidecar",
     "oauth2_provider",
     "corsheaders",
+    "ckeditor",
+    "ckeditor_uploader",
     "invoice.apps.InvoiceConfig",
     "service.apps.ServiceConfig",
     "apartment.apps.ApartmentConfig",
     "feedback.apps.FeedbackConfig",
     "locker.apps.LockerConfig",
     "notification.apps.NotificationConfig",
+    "guide.apps.GuideConfig",
+    "news.apps.NewsConfig",
 ]
 
+CKEDITOR_UPLOAD_PATH = "ckeditors/images/"
 
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
