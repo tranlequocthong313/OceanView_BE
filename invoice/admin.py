@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.utils.html import mark_safe
 from vnpay.admin import BillingAdmin
-from vnpay.models import Billing
+from vnpay.models import Billing, VnPay
 
 from app.admin import MyBaseModelAdmin, admin_site
 from utils import format, get_logger
@@ -134,10 +134,20 @@ class ProofImageAdmin(MyBaseModelAdmin):
         return False
 
 
+class VnPayBillingAdmin(BillingAdmin, MyBaseModelAdmin):
+    search_fields = (
+        "id",
+        "pay_by__resident_id",
+        "pay_by__personal_information__full_name",
+        "pay_by__personal_information__phone_number",
+        "pay_by__personal_information__email",
+    )
+
+
 admin_site.register(models.Invoice, InvoiceAdmin)
 admin_site.register(models.InvoiceDetail, InvoiceDetailAdmin)
 admin_site.register(models.Payment, PaymentAdmin)
 admin_site.register(models.ProofImage, ProofImageAdmin)
 admin_site.register(models.OnlineWallet, OnlineWalletAdmin)
 
-admin_site.register(Billing, BillingAdmin)
+admin_site.register(Billing, VnPayBillingAdmin)
