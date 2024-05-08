@@ -20,6 +20,7 @@ urlpatterns = [
     path("", include("notification.urls")),
     path("", include("guide.urls")),
     path("", include("news.urls")),
+    path("vnpay/", include("vnpay.api_urls")),
     path("logout/", logout_view, name="logout"),
     path("admin/logout/", lambda _: redirect("/logout/", permanent=False)),
     path("admin/", admin_site.urls),

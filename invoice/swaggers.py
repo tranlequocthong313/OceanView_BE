@@ -58,3 +58,15 @@ INVOICE_RETRIEVE = {
         )
     ],
 }
+
+INVOICE_VNPAY_PAYMENT = {
+    "description": "Pay invoice with vnpay",
+    "request": None,
+    "responses": {200: OpenApiTypes.STR},
+}
+
+INVOICE_VNPAY_RETURN = {
+    "description": "Return from vnpay",
+    "request": None,
+    "responses": {200: OpenApiTypes.STR},
+}
