@@ -6,6 +6,7 @@ from django.db.models.base import post_save
 from django.db.models.signals import pre_save
 from django.dispatch import receiver
 from django.utils.translation import gettext_lazy as _
+from vnpay.models import Billing
 
 from app.models import MyBaseModel, MyBaseModelWithDeletedState
 from service.models import ServiceRegistration
@@ -101,6 +102,11 @@ class Payment(MyBaseModelWithDeletedState):
     def is_success(self):
         return self.status == Payment.PaymentStatus.SUCCESS
 
+    def pay(self):
+        self.status = Payment.PaymentStatus.SUCCESS
+        self.save()
+        return True
+
     class Meta(MyBaseModel.Meta):
         verbose_name = _("Thanh toán")
         verbose_name_plural = _("Thanh toán")
@@ -134,11 +140,15 @@ class ProofImage(MyBaseModelWithDeletedState):
 
 
 class OnlineWallet(MyBaseModelWithDeletedState):
-    transaction_code = models.CharField(
-        _("Mã giao dịch"), max_length=49, null=True, blank=True
-    )
     payment = models.ForeignKey(
         verbose_name=_("Thanh toán"), to=Payment, on_delete=models.CASCADE
+    )
+    vnpay_billing = models.OneToOneField(
+        verbose_name=_("Thanh toán vnpay"),
+        to=Billing,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
     )
 
     class Meta(MyBaseModel.Meta):
@@ -146,7 +156,7 @@ class OnlineWallet(MyBaseModelWithDeletedState):
         verbose_name_plural = _("Thanh toán qua ví điện tử")
 
     def __str__(self):
-        return self.transaction_code
+        return self.payment
 
 
 """

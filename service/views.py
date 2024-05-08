@@ -27,7 +27,7 @@ log = get_logger(__name__)
 class ServiceRegistrationView(DestroyAPIView, ReadOnlyModelViewSet):
     serializer_class = serializers.AccessCardServiceRegistrationSerializer
     permission_classes = [IsAuthenticated]
-    # ? Save the policy on the number of vehicles for each apartment in the database with a separate model
+    # NOTE: Save the policy on the number of vehicles for each apartment in the database with a separate model
     max_vehicle_counts = {
         Vehicle.VehicleType.BICYCLE: 2,
         Vehicle.VehicleType.MOTORBIKE: 2,

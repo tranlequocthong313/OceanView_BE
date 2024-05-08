@@ -62,6 +62,7 @@ INSTALLED_APPS = [
     "corsheaders",
     "ckeditor",
     "ckeditor_uploader",
+    "vnpay",
     "invoice.apps.InvoiceConfig",
     "service.apps.ServiceConfig",
     "apartment.apps.ApartmentConfig",
@@ -176,7 +177,7 @@ REST_FRAMEWORK = {
         "oauth2_provider.contrib.rest_framework.OAuth2Authentication",
     ),
     "DEFAULT_PERMISSION_CLASSES": [
-        "rest_framework.permissions.IsAuthenticated",
+        "rest_framework.permissions.AllowAny",
     ],
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.LimitOffsetPagination",
@@ -304,3 +305,8 @@ FIREBASE_ADMIN = initialize_app(cred)
 CRONJOBS = [
     # ("*/1 * * * *", "invoice.tasks.create_invoices"),
 ]
+
+VNPAY_TMN_CODE = os.environ.get("VNPAY_TMN_CODE")
+VNPAY_HASH_SECRET_KEY = os.environ.get("VNPAY_HASH_SECRET_KEY")
+VNPAY_PAYMENT_URL = os.environ.get("VNPAY_PAYMENT_URL")
+VNPAY_RETURN_URL = HOST + os.environ.get("VNPAY_RETURN_URL")

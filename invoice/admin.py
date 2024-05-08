@@ -1,5 +1,7 @@
 from django.contrib import admin
 from django.utils.html import mark_safe
+from vnpay.admin import BillingAdmin
+from vnpay.models import Billing
 
 from app.admin import MyBaseModelAdmin, admin_site
 from utils import format, get_logger
@@ -82,13 +84,15 @@ class PaymentAdmin(MyBaseModelAdmin):
 class OnlineWalletAdmin(MyBaseModelAdmin):
     list_display = (
         "id",
-        "transaction_code",
         "payment",
+        "vnpay_billing",
     )
     search_fields = (
         "id",
-        "transaction_code",
         "payment__status",
+        "vnpay_billing__id",
+        "vnpay_billing__transaction_id",
+        "vnpay_billing__reference_number",
     )
     list_filter = ("payment__status",)
     exclude = ("deleted",)
@@ -135,3 +139,5 @@ admin_site.register(models.InvoiceDetail, InvoiceDetailAdmin)
 admin_site.register(models.Payment, PaymentAdmin)
 admin_site.register(models.ProofImage, ProofImageAdmin)
 admin_site.register(models.OnlineWallet, OnlineWalletAdmin)
+
+admin_site.register(Billing, BillingAdmin)
