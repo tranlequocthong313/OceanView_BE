@@ -14,7 +14,7 @@ from vnpay.models import Billing
 
 from app import settings
 from notification.manager import AdminNotificationManager
-from utils import get_logger
+from utils import get_logger, token
 
 from . import serializers, swaggers
 from .models import Invoice, OnlineWallet, Payment, ProofImage
@@ -90,11 +90,14 @@ class InvoiceView(ListAPIView, RetrieveAPIView, ViewSet):
     )
     @transaction.atomic
     def payment_vnpay(self, request, pk=None):
+        log.info(request.data)
         invoice = self.get_object()
 
         r = requests.post(
-            url=f"{settings.HOST}/vnpay/payment_url/",
-            headers={"AUTHORIZATION": request.META["HTTP_AUTHORIZATION"]},
+            url=f"{settings.HOST}/vnpay/payment_url/?token={token.generate_token(settings.SECRET_KEY)}",
+            headers={
+                "AUTHORIZATION": request.META["HTTP_AUTHORIZATION"],
+            },
             data={"amount": int(invoice.total_amount)},
         )
         log.info("Requested to VNPay successfully")
@@ -135,9 +138,9 @@ class InvoiceView(ListAPIView, RetrieveAPIView, ViewSet):
         permission_classes=[AllowAny],
     )
     @transaction.atomic
-    def return_vnpay(self, request, pk=None):
+    def return_vnpay(self, request):
         r = requests.get(
-            url=f"{settings.HOST}/vnpay/payment_ipn/?{urllib.parse.urlencode(request.GET, doseq=False)}",
+            url=f"{settings.HOST}/vnpay/payment_ipn/?{urllib.parse.urlencode(request.GET, doseq=False)}&token={token.generate_token(settings.SECRET_KEY)}",
         )
         log.info("Requested to VNPay successfully")
         vnpay_success_code = "00"

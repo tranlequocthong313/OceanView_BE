@@ -1,7 +1,13 @@
+from calendar import monthrange
+from datetime import datetime
+from typing import Any
+
 from django.contrib import admin
+from django.db.models import Sum
+from django.http import HttpRequest
 from django.utils.html import mark_safe
 from vnpay.admin import BillingAdmin
-from vnpay.models import Billing, VnPay
+from vnpay.models import Billing
 
 from app.admin import MyBaseModelAdmin, admin_site
 from utils import format, get_logger
@@ -144,10 +150,49 @@ class VnPayBillingAdmin(BillingAdmin, MyBaseModelAdmin):
     )
 
 
+class StatsRevenueAdmin(admin.ModelAdmin):
+    change_list_template = "admin/stats/revenue_change_list.html"
+
+    def changelist_view(self, request, extra_context=None):
+        extra_context = extra_context or {}
+        extra_context["title"] = "Thống kê doanh thu"
+        extra_context["chart_data"] = self.get_revenue_stats()
+        return super().changelist_view(request, extra_context=extra_context)
+
+    def get_revenue_stats(self):
+        current_year = datetime.now().year
+        data = {}
+
+        for month in range(1, 13):
+            days_in_month = monthrange(current_year, month)[1]
+            start_date = datetime(current_year, month, 1)
+            end_date = datetime(current_year, month, days_in_month)
+
+            total_revenue = models.Invoice.objects.filter(
+                due_date__gte=start_date, due_date__lte=end_date
+            ).aggregate(total_revenue=Sum("total_amount"))["total_revenue"]
+
+            data[f"{month}-{current_year}"] = int(total_revenue) if total_revenue else 0
+
+        return data
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(
+        self, request: HttpRequest, obj: Any | None = ...
+    ) -> bool:
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+
 admin_site.register(models.Invoice, InvoiceAdmin)
 admin_site.register(models.InvoiceDetail, InvoiceDetailAdmin)
 admin_site.register(models.Payment, PaymentAdmin)
 admin_site.register(models.ProofImage, ProofImageAdmin)
 admin_site.register(models.OnlineWallet, OnlineWalletAdmin)
+admin_site.register(models.StatsRevenue, StatsRevenueAdmin)
 
 admin_site.register(Billing, VnPayBillingAdmin)

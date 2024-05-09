@@ -86,6 +86,7 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "user.middlewares.SendOTPRateLimitMiddleware",
+    "invoice.middlewares.VnPayMiddleware",
 ]
 
 ROOT_URLCONF = "app.urls"
@@ -162,6 +163,7 @@ if not DEBUG:
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 COMPANY_NAME = "OceanView"
+LOGO = "https://res.cloudinary.com/diojasks1/image/upload/v1714901151/ff0shecjx5xmzojyg6oq.jpg"
 
 AUTH_USER_MODEL = "user.User"
 

@@ -39,3 +39,10 @@ class Feedback(MyBaseModelWithDeletedState):
 
     def __str__(self) -> str:
         return f"[{self.get_type_display()}] {self.title}"
+
+
+class StatsFeedback(Feedback):
+    class Meta:
+        proxy = True
+        verbose_name = _("Thống kê phản ánh")
+        verbose_name_plural = _("Thống kê phản ánh")

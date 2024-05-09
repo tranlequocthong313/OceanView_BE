@@ -3,6 +3,7 @@ from rest_framework import serializers
 from app import settings
 from feedback.models import Feedback
 from invoice.models import ProofImage
+from news.models import News
 from service.models import ReissueCard, ServiceRegistration
 
 from .models import FCMToken, Notification, NotificationContent
@@ -40,6 +41,7 @@ ENTITY_TYPE_MODEL_MAPPING = {
     "SERVICE_REISSUE": ReissueCard,
     "FEEDBACK_POST": Feedback,
     "INVOICE_PROOF_IMAGE_PAYMENT": ProofImage,
+    "NEWS_POST": News,
 }
 
 ACTION_MESSAGE_MAPPING = {
@@ -58,6 +60,9 @@ ACTION_MESSAGE_MAPPING = {
     notification_content: entity.message_proof_image_created(
         notification_content.get_entity_type_display().lower()
     ),
+    "NEWS_POST": lambda entity, notification_content: entity.message_news_post(
+        notification_content.get_entity_type_display().lower()
+    ),
 }
 
 
@@ -72,8 +77,8 @@ class ReadNotificationSerializer(serializers.ModelSerializer):
 class NotificationContentSerializer(serializers.ModelSerializer):
     class Meta:
         model = NotificationContent
-        fields = ["id", "entity_type", "entity_id"]
-        read_only_fields = ["id", "entity_type", "entity_id"]
+        fields = ["id", "entity_type", "entity_id", "image"]
+        read_only_fields = ["id", "entity_type", "entity_id", "image"]
 
 
 class ClientNotificationSerializer(serializers.ModelSerializer):
@@ -126,7 +131,11 @@ class AdminNotificationSerializer(ClientNotificationSerializer):
     link = serializers.SerializerMethodField()
 
     def get_link(self, instance):
-        return LINK_MAPPING[instance.content.entity_type](instance.content.entity_id)
+        return (
+            LINK_MAPPING[instance.content.entity_type](instance.content.entity_id)
+            if instance.content.entity_type in LINK_MAPPING
+            else ""
+        )
 
     class Meta:
         model = ClientNotificationSerializer.Meta.model

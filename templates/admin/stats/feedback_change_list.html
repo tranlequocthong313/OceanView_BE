@@ -1,0 +1,80 @@
+{% extends "admin/change_list.html" %}
+{% load i18n admin_urls %}
+
+{% block content %}
+<div class='wrapper'>
+    <table>
+        <thead>
+            <tr>
+                <th>Tháng</th>
+                <th>Thắc mắc</th>
+                <th>Phàn nàn</th>
+                <th>Hỗ trợ</th>
+                <th>Khác</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for month_year, stats in chart_data.items %}
+            <tr>
+                <td>{{ month_year }}</td>
+                <td>{{ stats.QUESTION }}</td>
+                <td>{{ stats.COMPLAIN }}</td>
+                <td>{{ stats.SUPPORT }}</td>
+                <td>{{ stats.OTHER }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<canvas id="stats-chart"></canvas>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var chartData = {{ chart_data|safe }};
+        var labels = Object.keys(chartData);
+        var data = Object.values(chartData);
+
+        var backgroundColors = ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0']; // Màu sắc cho các loại phản ánh
+        var datasets = [];
+
+        Object.keys(data[0]).forEach(function(key, index) {
+            var counts = data.map(function(item) {
+                return item[key];
+            });
+
+            datasets.push({
+                label: key,
+                data: counts,
+                backgroundColor: backgroundColors[index],
+                borderWidth: 1
+            });
+        });
+
+        var ctx = document.getElementById('stats-chart').getContext('2d');
+        var chart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: datasets
+            },
+            options: {
+                responsive: true,
+                title: {
+                    display: true,
+                    text: 'Thống kê phản ánh'
+                },
+                scales: {
+                    yAxes: [{
+                        ticks: {
+                            beginAtZero: true,
+                            callback: function(value) {if (value % 1 === 0) {return value;}}
+                        }
+                    }]
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

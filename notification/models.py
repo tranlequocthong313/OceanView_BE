@@ -2,6 +2,7 @@ from django.core.validators import MinLengthValidator
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
+from app import settings
 from app.models import MyBaseModel
 from user.models import User
 
@@ -27,7 +28,15 @@ class NotificationContent(MyBaseModel):
         SERVICE_REISSUE = "SERVICE_REISSUE", _("Cấp lại")
         FEEDBACK_POST = "FEEDBACK_POST", _("Đăng phản ánh")
         INVOICE_PROOF_IMAGE_PAYMENT = "INVOICE_PROOF_IMAGE_PAYMENT", _("Thanh toán")
+        NEWS_POST = "NEWS_POST", _("Đăng thông báo")
 
+    image = models.CharField(
+        verbose_name=_("Ảnh"),
+        null=True,
+        blank=True,
+        default=settings.LOGO,
+        max_length=200,
+    )
     entity_type = models.CharField(
         verbose_name=_("Loại thông báo"), choices=EntityType.choices, max_length=100
     )

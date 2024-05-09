@@ -1,7 +1,7 @@
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiExample, OpenApiParameter
 
-from invoice.models import Invoice, Payment
+from invoice.models import Invoice
 from invoice.serializers import InvoiceSerializer
 from utils import format
 
