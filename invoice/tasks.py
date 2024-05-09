@@ -5,7 +5,6 @@ from service.models import ServiceRegistration
 from .models import Invoice, InvoiceDetail
 
 
-# TODO: Add to crontab and execute per month
 def create_invoices():
     now = datetime.now()
     first_day_of_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)

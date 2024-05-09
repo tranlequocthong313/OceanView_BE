@@ -54,7 +54,6 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "django_crontab",
     "rest_framework",
     "drf_spectacular",
     "drf_spectacular_sidecar",
@@ -63,6 +62,7 @@ INSTALLED_APPS = [
     "ckeditor",
     "ckeditor_uploader",
     "vnpay",
+    "django_crontab",
     "invoice.apps.InvoiceConfig",
     "service.apps.ServiceConfig",
     "apartment.apps.ApartmentConfig",
@@ -72,6 +72,7 @@ INSTALLED_APPS = [
     "guide.apps.GuideConfig",
     "news.apps.NewsConfig",
 ]
+CRONJOBS = [("* * * * *", "invoice.tasks.create_invoices")]
 
 CKEDITOR_UPLOAD_PATH = "ckeditors/images/"
 
@@ -302,11 +303,6 @@ firebase_credentials = {
 }
 cred = credentials.Certificate(firebase_credentials)
 FIREBASE_ADMIN = initialize_app(cred)
-
-
-CRONJOBS = [
-    # ("*/1 * * * *", "invoice.tasks.create_invoices"),
-]
 
 VNPAY_TMN_CODE = os.environ.get("VNPAY_TMN_CODE")
 VNPAY_HASH_SECRET_KEY = os.environ.get("VNPAY_HASH_SECRET_KEY")
