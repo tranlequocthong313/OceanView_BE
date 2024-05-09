@@ -1,7 +1,5 @@
 from datetime import datetime, timedelta
 
-from django.contrib.auth import get_user_model
-
 from service.models import ServiceRegistration
 
 from .models import Invoice, InvoiceDetail
@@ -49,7 +47,7 @@ def create_invoices():
 
 
 def calculate_days_used(registration):
-    today = datetime.today()
+    today = datetime.now()
     last_day_of_month = today.replace(day=1, month=today.month % 12 + 1) - timedelta(
         days=1
     )

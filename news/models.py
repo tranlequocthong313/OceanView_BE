@@ -25,6 +25,10 @@ class News(MyBaseModel):
         on_delete=models.SET_NULL,
         null=True,
     )
+    is_broadcast = models.BooleanField(_("Gửi thông báo"), default=False)
+
+    def message_news_post(self, action):
+        return f"Ban quản trị {action}: {self.__str__()}"
 
     class Meta:
         verbose_name = _("Tin tức")

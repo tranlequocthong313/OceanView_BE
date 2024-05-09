@@ -13,7 +13,7 @@ Returns:
 """
 
 
-def generate_token(payload):
+def generate_token(payload=None):
     s = Serializer(settings.SECRET_KEY)
     return s.dumps(payload, salt=settings.HASHING_SALT)
 

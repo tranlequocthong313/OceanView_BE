@@ -159,6 +159,13 @@ class OnlineWallet(MyBaseModelWithDeletedState):
         return self.payment
 
 
+class StatsRevenue(Invoice):
+    class Meta:
+        proxy = True
+        verbose_name = _("Thống kê doanh thu")
+        verbose_name_plural = _("Thống kê doanh thu")
+
+
 """
 A signal receiver function to generate an invoice ID before saving the Invoice instance.
 

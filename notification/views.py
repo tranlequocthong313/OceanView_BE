@@ -41,6 +41,8 @@ class FCMTokenView(NonAccessTokenPermissionMixin, CreateAPIView, ViewSet):
                 )
             if request.user.is_staff:
                 topic.subscribe_to_topic(fcm_tokens=fcm_token.token, topic="admin")
+            else:
+                topic.subscribe_to_topic(fcm_tokens=fcm_token.token, topic="resident")
             response = Response("Saved fcm token successfully", status.HTTP_201_CREATED)
             response.set_cookie("fcm_token", fcm_token.token)
             return response
