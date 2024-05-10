@@ -21,25 +21,24 @@ def send_to_topic(topic, notification=None, data=None, **kwargs):
     return response
 
 
-def send_notification(title=None, body=None, image=None, data=None):
-    return send_to_topic(
-        topic="resident",
-        notification=messaging.Notification(title=title, body=body, image=image),
-        android=messaging.AndroidConfig(data=data, priority="high"),
-    )
-
-
-def send_notification_to_admin(title=None, body=None, link=None, image=None, data=None):
-    return send_to_topic(
-        topic="admin",
-        notification=messaging.Notification(
-            title=title,
-            body=body,
-            image=image,
-        ),
-        webpush=messaging.WebpushConfig(
-            headers={"Urgency": "high"},
-            fcm_options=messaging.WebpushFCMOptions(link=link),
-            data=data,
-        ),
-    )
+def send_notification(title=None, body=None, image=None, link=None, data=None):
+    if link:
+        return send_to_topic(
+            topic="admin",
+            notification=messaging.Notification(
+                title=title,
+                body=body,
+                image=image,
+            ),
+            webpush=messaging.WebpushConfig(
+                headers={"Urgency": "high"},
+                fcm_options=messaging.WebpushFCMOptions(link=link),
+                data=data,
+            ),
+        )
+    else:
+        return send_to_topic(
+            topic="resident",
+            notification=messaging.Notification(title=title, body=body, image=image),
+            android=messaging.AndroidConfig(data=data, priority="high"),
+        )

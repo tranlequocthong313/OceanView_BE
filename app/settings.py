@@ -72,7 +72,7 @@ INSTALLED_APPS = [
     "guide.apps.GuideConfig",
     "news.apps.NewsConfig",
 ]
-CRONJOBS = [("* * * * *", "invoice.tasks.create_invoices")]
+CRONJOBS = [("0 0 1 * *", "invoice.tasks.create_invoices")]
 
 CKEDITOR_UPLOAD_PATH = "ckeditors/images/"
 

@@ -13,7 +13,8 @@ from rest_framework.viewsets import ViewSet
 from vnpay.models import Billing
 
 from app import settings
-from notification.manager import AdminNotificationManager
+from notification.manager import NotificationManager
+from notification.types import EntityType
 from utils import get_logger, token
 
 from . import serializers, swaggers
@@ -72,8 +73,10 @@ class InvoiceView(ListAPIView, RetrieveAPIView, ViewSet):
         proof_image = ProofImage.objects.create(
             payment=payment, image=serializer.validated_data["image"]
         )
-        AdminNotificationManager.create_notification_for_proof_image(
-            request, proof_image
+        NotificationManager.create_notification(
+            entity=proof_image,
+            entity_type=EntityType.INVOICE_PROOF_IMAGE_PAYMENT,
+            sender=request.user,
         )
         log.info("Created proof image payment successfully")
         return Response(

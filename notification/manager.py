@@ -13,147 +13,75 @@ from notification.models import (
     NotificationSender,
 )
 from notification.serializers import LINK_MAPPING, NotificationContentSerializer
+from notification.types import (
+    ACTION_MESSAGE_MAPPING,
+    ENTITYP_TARGET,
+    EntityType,
+    MessageTarget,
+)
 from user.models import User
 from utils import get_logger
 
 log = get_logger(__name__)
 
 
-# TODO: Refactor this code
-class AdminNotificationManager:
-    @staticmethod
-    def create_notification_for_feedback(request, feedback):
-        notification_content = NotificationContent.objects.create(
-            entity_id=feedback.pk,
-            entity_type=NotificationContent.EntityType.FEEDBACK_POST,
-            image=request.user.avatar_url,
-        )
-        NotificationSender.objects.create(
-            sender=request.user, content=notification_content
-        )
-        for user in User.objects.filter(
-            is_staff=True, fcmtoken__device_type=FCMToken.DeviceType.WEB
-        ).distinct():
-            log.debug(user)
-            Notification.objects.create(recipient=user, content=notification_content)
-        message.send_notification_to_admin(
-            title=f'{request.user.__str__()} {notification_content.get_entity_type_display().lower()}: "{feedback.__str__()}".',
-            link=LINK_MAPPING[notification_content.entity_type](feedback.pk),
-            image=notification_content.image,
-            data={
-                "content": json.dumps(
-                    NotificationContentSerializer(notification_content).data
-                ),
-            },
-        )
+def get_users_by_target(target=None, filters=None):
+    if filters is None:
+        filters = {}
+    users = []
+    if target == MessageTarget.ADMIN:
+        users = User.objects.filter(
+            is_staff=True, fcmtoken__device_type=FCMToken.DeviceType.WEB, **filters
+        ).distinct()
+    elif target in [MessageTarget.RESIDENTS, MessageTarget.RESIDENT]:
+        users = User.objects.filter(
+            fcmtoken__device_type=FCMToken.DeviceType.ANDROID, **filters
+        ).distinct()
+    elif target == MessageTarget.ALL:
+        users = User.objects.filter(
+            fcmtoken__device_type__isnull=False, **filters
+        ).distinct()
+    return users
 
-    @staticmethod
-    def create_notification_for_service_registration(request, service_registration):
-        notification_content = NotificationContent.objects.create(
-            entity_id=service_registration.pk,
-            entity_type=NotificationContent.EntityType.SERVICE_REGISTER,
-            image=request.user.avatar_url,
-        )
-        NotificationSender.objects.create(
-            sender=request.user, content=notification_content
-        )
-        for user in User.objects.filter(
-            is_staff=True, fcmtoken__device_type=FCMToken.DeviceType.WEB
-        ).distinct():
-            log.debug(user)
-            Notification.objects.create(recipient=user, content=notification_content)
-        message.send_notification_to_admin(
-            title=f"{request.user.__str__()} {notification_content.get_entity_type_display().lower()} {service_registration.service.get_id_display().lower()}.",
-            link=LINK_MAPPING[notification_content.entity_type](
-                service_registration.pk
-            ),
-            image=notification_content.image,
-            data={
-                "content": json.dumps(
-                    NotificationContentSerializer(notification_content).data
-                ),
-            },
-        )
 
+class NotificationManager:
     @staticmethod
-    def create_notification_for_service_reissue(request, reissue):
-        notification_content = NotificationContent.objects.create(
-            entity_id=reissue.pk,
-            entity_type=NotificationContent.EntityType.SERVICE_REISSUE,
-            image=request.user.avatar_url,
+    def create_notification(
+        entity=None, entity_type=None, sender=None, image=None, filters=None
+    ):
+        if filters is None:
+            filters = {}
+        if not entity or not entity_type:
+            raise ValueError("entity values must not be empty")
+        if not image:
+            image = sender.avatar_url or settings.LOGO
+        target = ENTITYP_TARGET[str(entity_type)]
+        content = NotificationContent.objects.create(
+            entity_id=entity.pk,
+            entity_type=entity_type,
+            image=image,
         )
-        NotificationSender.objects.create(
-            sender=request.user, content=notification_content
-        )
-        for user in User.objects.filter(
-            is_staff=True, fcmtoken__device_type=FCMToken.DeviceType.WEB
-        ).distinct():
-            log.debug(user)
-            Notification.objects.create(recipient=user, content=notification_content)
-        message.send_notification_to_admin(
-            title=f"{request.user.__str__()} {notification_content.get_entity_type_display().lower()} {reissue.service_registration.service.get_id_display()}.",
-            link=LINK_MAPPING[notification_content.entity_type](reissue.pk),
-            image=notification_content.image,
-            data={
-                "content": json.dumps(
-                    NotificationContentSerializer(notification_content).data
-                ),
-            },
-        )
-
-    @staticmethod
-    def create_notification_for_proof_image(request, proof_image):
-        notification_content = NotificationContent.objects.create(
-            entity_id=proof_image.pk,
-            entity_type=NotificationContent.EntityType.INVOICE_PROOF_IMAGE_PAYMENT,
-            image=request.user.avatar_url,
-        )
-        NotificationSender.objects.create(
-            sender=request.user, content=notification_content
-        )
-        for user in User.objects.filter(
-            is_staff=True, fcmtoken__device_type=FCMToken.DeviceType.WEB
-        ).distinct():
-            log.debug(user)
-            Notification.objects.create(recipient=user, content=notification_content)
-        message.send_notification_to_admin(
-            title=f"{request.user.__str__()} {notification_content.get_entity_type_display().lower()} {proof_image.payment.get_method_display()}.",
-            link=LINK_MAPPING[notification_content.entity_type](proof_image.pk),
-            image=notification_content.image,
-            data={
-                "content": json.dumps(
-                    NotificationContentSerializer(notification_content).data
-                ),
-            },
-        )
-
-    @staticmethod
-    def create_notification_for_news(news):
-        notification_content = NotificationContent.objects.create(
-            entity_id=news.pk,
-            entity_type=NotificationContent.EntityType.NEWS_POST,
-        )
-        NotificationSender.objects.create(
-            sender=User.objects.filter(is_staff=True).first(),
-            content=notification_content,
-        )
-        for user in User.objects.filter(
-            fcmtoken__device_type=FCMToken.DeviceType.ANDROID
-        ).distinct():
-            log.debug(user)
-            Notification.objects.create(recipient=user, content=notification_content)
+        NotificationSender.objects.create(sender=sender, content=content)
+        for user in get_users_by_target(target=target, filters=filters):
+            Notification.objects.create(recipient=user, content=content)
         message.send_notification(
-            title=f"Ban quản trị {notification_content.get_entity_type_display().lower()} {news.message_news_post(notification_content.get_entity_type_display().lower())}.",
-            image=settings.LOGO,
-            data={
-                "content": json.dumps(
-                    NotificationContentSerializer(notification_content).data
-                ),
-            },
+            title=ACTION_MESSAGE_MAPPING[entity_type](entity=entity, content=content),
+            link=(
+                LINK_MAPPING[entity_type](entity.pk)
+                if entity_type in LINK_MAPPING
+                else None
+            ),
+            image=image,
+            data={"content": json.dumps(NotificationContentSerializer(content).data)},
         )
 
 
 @receiver(post_save, sender=News)
 def send_broadcast(sender, instance, created, **kwargs):
     if created:
-        AdminNotificationManager.create_notification_for_news(instance)
+        NotificationManager.create_notification(
+            entity=instance,
+            entity_type=EntityType.NEWS_POST,
+            sender=User.objects.filter(is_staff=True).first(),
+            image=settings.LOGO,
+        )

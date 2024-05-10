@@ -4,7 +4,9 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
-from notification.manager import AdminNotificationManager
+from firebase.message import send
+from notification.manager import NotificationManager
+from notification.types import EntityType
 
 from . import models, serializers, swaggers
 
@@ -42,8 +44,8 @@ class FeedbackView(ModelViewSet):
         serializer.is_valid(raise_exception=True)
         feedback = self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
-        AdminNotificationManager.create_notification_for_feedback(
-            request=request, feedback=feedback
+        NotificationManager.create_notification(
+            entity=feedback, entity_type=EntityType.FEEDBACK_POST, sender=request.user
         )
         return Response(
             serializer.data, status=status.HTTP_201_CREATED, headers=headers

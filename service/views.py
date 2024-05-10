@@ -12,7 +12,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import ReadOnlyModelViewSet
 
-from notification.manager import AdminNotificationManager
+from notification.manager import NotificationManager
+from notification.types import EntityType
 from user.models import PersonalInformation
 from user.permissions import IsOwner
 from utils import get_logger
@@ -150,8 +151,10 @@ class ServiceRegistrationView(DestroyAPIView, ReadOnlyModelViewSet):
                 personal_information=personal_information,
                 resident=request.user,
             )
-            AdminNotificationManager.create_notification_for_service_registration(
-                request, service_registration
+            NotificationManager.create_notification(
+                entity=service_registration,
+                entity_type=EntityType.SERVICE_REGISTER,
+                sender=request.user,
             )
             log.info(f"{relative} registered successfully")
             return Response(self.serializer_class(service_registration).data)
@@ -180,7 +183,7 @@ class ServiceRegistrationView(DestroyAPIView, ReadOnlyModelViewSet):
             if not request.user.apartment_set.filter(room_number=room_number).exists():
                 log.error(f"{request.user} doesn't live in {room_number} room")
                 return Response(
-                    "This apartment does not belong to you, so you cannot register for a parking card",
+                    "This apartment does not belong to you, so you cannot register for a resident card",
                     status=status.HTTP_403_FORBIDDEN,
                 )
 
@@ -238,8 +241,10 @@ class ServiceRegistrationView(DestroyAPIView, ReadOnlyModelViewSet):
                 resident=request.user,
                 apartment_id=room_number,
             )
-            AdminNotificationManager.create_notification_for_service_registration(
-                request, service_registration
+            NotificationManager.create_notification(
+                entity=service_registration,
+                entity_type=EntityType.SERVICE_REGISTER,
+                sender=request.user,
             )
             log.info(f"{relative} registered successfully")
             return Response(self.serializer_class(service_registration).data)
@@ -347,8 +352,10 @@ class ServiceRegistrationView(DestroyAPIView, ReadOnlyModelViewSet):
                     service_registration=service_registration,
                 )
                 log.info(f"Registered for {relative} successfully")
-            AdminNotificationManager.create_notification_for_service_registration(
-                request, service_registration
+            NotificationManager.create_notification(
+                entity=service_registration,
+                entity_type=EntityType.SERVICE_REGISTER,
+                sender=request.user,
             )
             return Response(self.serializer_class(service_registration).data)
         except Exception:
@@ -387,7 +394,9 @@ class ServiceRegistrationView(DestroyAPIView, ReadOnlyModelViewSet):
                 "You have reissued this service or it's being rejected, canceled, pending",
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        AdminNotificationManager.create_notification_for_service_reissue(request, obj)
+        NotificationManager.create_notification(
+            entity=obj, entity_type=EntityType.SERVICE_REISSUE, sender=request.user
+        )
         log.info(f"Make reissue request for {request.user.__str__()} successfully")
         return Response(
             "Requested successfully. Waiting for approval", status.HTTP_201_CREATED
