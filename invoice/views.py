@@ -13,6 +13,7 @@ from rest_framework.viewsets import ViewSet
 from vnpay.models import Billing
 
 from app import settings
+from invoice import momo
 from notification.manager import NotificationManager
 from notification.types import EntityType
 from utils import get_logger, token
@@ -25,6 +26,8 @@ log = get_logger(__name__)
 
 class InvoiceView(ListAPIView, RetrieveAPIView, ViewSet):
     serializer_class = serializers.InvoiceSerializer
+    MOMO_SUCCESS_CODE = 0
+    VNPAY_SUCCESS_CODE = "00"
 
     def get_queryset(self):
         queries = Invoice.objects.filter(deleted=False)
@@ -83,9 +86,7 @@ class InvoiceView(ListAPIView, RetrieveAPIView, ViewSet):
             "Created proof image payment successfully", status=status.HTTP_201_CREATED
         )
 
-    # TODO: Split payment businesses to another module
-    # TODO: Prevent client request directly to vnpay apis
-    @extend_schema(**swaggers.INVOICE_VNPAY_PAYMENT)
+    @extend_schema(**swaggers.INVOICE_ONLINE_WALLET_PAYMENT)
     @action(
         methods=["POST"],
         url_path="payment/vnpay",
@@ -93,7 +94,6 @@ class InvoiceView(ListAPIView, RetrieveAPIView, ViewSet):
     )
     @transaction.atomic
     def payment_vnpay(self, request, pk=None):
-        log.info(request.data)
         invoice = self.get_object()
 
         r = requests.post(
@@ -105,7 +105,7 @@ class InvoiceView(ListAPIView, RetrieveAPIView, ViewSet):
         )
         log.info("Requested to VNPay successfully")
         if not r.ok or "payment_url" not in r.json():
-            log.error("Vnpay payment failed", r.json())
+            log.error(f"Vnpay payment failed:::{r.json()}")
             return Response(
                 "Vnpay server error", status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
@@ -117,7 +117,7 @@ class InvoiceView(ListAPIView, RetrieveAPIView, ViewSet):
             reference_number=vnpay_reference_number
         ).first()
         if not vnpay_billing:
-            log.error("Vnpay payment failed, not found vnpay billing", r.json())
+            log.error(f"Vnpay payment failed, not found vnpay billing:::{r.json()}")
             return Response(
                 "Vnpay server error", status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
@@ -128,12 +128,15 @@ class InvoiceView(ListAPIView, RetrieveAPIView, ViewSet):
             invoice=invoice,
             total_amount=invoice.total_amount,
         )
-        OnlineWallet.objects.create(payment=payment, vnpay_billing=vnpay_billing)
+        OnlineWallet.objects.create(
+            payment=payment,
+            wallet_type=OnlineWallet.WalletType.VNPAY,
+            reference_number=vnpay_reference_number,
+        )
         log.info("Created online wallet payment successfully")
         return Response(r.json(), status.HTTP_200_OK)
 
-    # TODO: Prevent client request directly to vnpay apis
-    @extend_schema(**swaggers.INVOICE_VNPAY_RETURN)
+    @extend_schema(**swaggers.INVOICE_ONLINE_WALLET_RETURN)
     @action(
         methods=["GET"],
         url_path="payment/vnpay",
@@ -146,13 +149,12 @@ class InvoiceView(ListAPIView, RetrieveAPIView, ViewSet):
             url=f"{settings.HOST}/vnpay/payment_ipn/?{urllib.parse.urlencode(request.GET, doseq=False)}&token={token.generate_token(settings.SECRET_KEY)}",
         )
         log.info("Requested to VNPay successfully")
-        vnpay_success_code = "00"
         if (
             not r.ok
             or "RspCode" not in r.json()
-            or r.json()["RspCode"] != vnpay_success_code
+            or r.json()["RspCode"] != self.VNPAY_SUCCESS_CODE
         ):
-            log.error("Vnpay payment failed", r.json())
+            log.error(f"Vnpay payment failed:::{r.json()}")
             return Response(
                 "Vnpay server error", status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
@@ -160,14 +162,15 @@ class InvoiceView(ListAPIView, RetrieveAPIView, ViewSet):
         parsed_url = urlparse(request.get_full_path())
         vnpay_reference_number = parse_qs(parsed_url.query)["vnp_TxnRef"][0]
         online_wallet = OnlineWallet.objects.filter(
-            vnpay_billing__reference_number=vnpay_reference_number
+            wallet_type=OnlineWallet.WalletType.VNPAY,
+            reference_number=vnpay_reference_number,
         ).first()
         if not online_wallet:
-            log.error("Vnpay payment failed, not found vnpay billing", r.json())
+            log.error(f"Vnpay payment failed, not found vnpay billing:::{r.json()}")
             return Response(
                 "Vnpay server error", status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
-        paid = online_wallet.payment.pay()
+        paid = online_wallet.pay()
         if not paid:
             log.error(
                 "Vnpay payment failed, can't set success status for payment model"
@@ -178,3 +181,121 @@ class InvoiceView(ListAPIView, RetrieveAPIView, ViewSet):
 
         log.info("Paid online wallet payment successfully")
         return Response("Paid successfully", status.HTTP_200_OK)
+
+    @extend_schema(**swaggers.INVOICE_ONLINE_WALLET_PAYMENT)
+    @action(
+        methods=["POST"],
+        url_path="payment/momo",
+        detail=True,
+    )
+    @transaction.atomic
+    def payment_momo(self, request, pk=None):
+        invoice = self.get_object()
+        r = momo.pay(invoice)
+        if not r.ok:
+            log.error(f"Momo payment failed:::{r.json()}")
+            return Response(
+                "Momo server error", status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+        data = r.json()
+        if data["resultCode"] != self.MOMO_SUCCESS_CODE:
+            log.error(f"Momo payment failed:::{r.json()}")
+            return Response(
+                "Momo server error", status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+        payment = Payment.objects.create(
+            method=Payment.PaymentMethod.ONLINE_WALLET,
+            status=Payment.PaymentStatus.CONFIRMING,
+            invoice=invoice,
+            total_amount=invoice.total_amount,
+        )
+        OnlineWallet.objects.create(
+            payment=payment,
+            wallet_type=OnlineWallet.WalletType.MOMO,
+            reference_number=data["requestId"],
+        )
+        log.info("Created online wallet payment successfully")
+        return Response(
+            {
+                "pay_url": data["payUrl"],
+                "deeplink": data["deeplink"],
+                "qrcode_url": data["qrCodeUrl"],
+            },
+            status.HTTP_200_OK,
+        )
+
+    @extend_schema(**swaggers.INVOICE_ONLINE_WALLET_RETURN)
+    @action(
+        methods=["POST"],
+        url_path="payment/ipn-momo",
+        detail=False,
+        permission_classes=[AllowAny],
+    )
+    @transaction.atomic
+    def ipn_momo(self, request):
+        if (
+            "resultCode" not in request.data
+            or request.data["resultCode"] != self.MOMO_SUCCESS_CODE
+        ):
+            log.error(f"Momo payment failed:::{request.data}")
+            return Response(
+                "Momo server error", status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+        online_wallet = OnlineWallet.objects.filter(
+            reference_number=request.data["requestId"]
+        ).first()
+        if not online_wallet:
+            log.error(
+                f"Momo payment failed, not found momo transaction:::{request.data}"
+            )
+            return Response(
+                "Momo server error", status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+        if online_wallet.payment.total_amount != int(request.data["amount"]):
+            log.error(f"Momo payment failed, amounts are not matching:::{request.data}")
+            return Response(
+                "Momo server error", status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+        paid = online_wallet.pay(transaction_id=request.data["transId"])
+        if not paid:
+            log.error("Momo payment failed, can't set success status for payment model")
+            return Response(
+                "Internal server error", status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+        log.info("IPN paid online wallet payment successfully")
+        return Response(status.HTTP_204_NO_CONTENT)
+
+    @extend_schema(**swaggers.INVOICE_ONLINE_WALLET_RETURN)
+    @action(
+        methods=["GET"],
+        url_path="payment/momo",
+        detail=False,
+        permission_classes=[AllowAny],
+    )
+    @transaction.atomic
+    def return_momo(self, request):
+        if "resultCode" not in request.GET or request.GET.get("resultCode") != str(
+            self.MOMO_SUCCESS_CODE
+        ):
+            log.error("Momo payment failed")
+            return Response(
+                "Momo server error", status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+        online_wallet = OnlineWallet.objects.filter(
+            reference_number=request.GET.get("requestId")
+        ).first()
+        if not online_wallet:
+            log.error(
+                f"Momo payment failed, not found momo transaction:::{request.GET}"
+            )
+            return Response(
+                "Momo server error", status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+        if online_wallet.payment.total_amount != int(request.GET.get("amount")):
+            log.error(f"Momo payment failed, amounts are not matching:::{request.GET}")
+            return Response(
+                "Momo server error", status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+        log.info("Redirect paid online wallet payment successfully")
+        return Response("Paid with Momo successfully", status.HTTP_200_OK)

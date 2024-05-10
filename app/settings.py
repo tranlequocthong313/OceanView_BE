@@ -308,3 +308,14 @@ VNPAY_TMN_CODE = os.environ.get("VNPAY_TMN_CODE")
 VNPAY_HASH_SECRET_KEY = os.environ.get("VNPAY_HASH_SECRET_KEY")
 VNPAY_PAYMENT_URL = os.environ.get("VNPAY_PAYMENT_URL")
 VNPAY_RETURN_URL = HOST + os.environ.get("VNPAY_RETURN_URL")
+
+MOMO_LANG = "vi"
+MOMO_REQUEST_TYPE = "captureWallet"
+MOMO_STORE_ID = "OceanView"
+MOMO_PARTNER_CODE = "MOMO"
+MOMO_PARTNER_NAME = "Momo Payment"
+MOMO_ACCESS_KEY = os.environ.get("MOMO_ACCESS_KEY")
+MOMO_SECRET_KEY = os.environ.get("MOMO_SECRET_KEY")
+MOMO_ENDPOINT = os.environ.get("MOMO_ENDPOINT")
+MOMO_REDIRECT_URL = HOST + os.environ.get("MOMO_REDIRECT_URL")
+MOMO_IPN_URL = HOST + os.environ.get("MOMO_IPN_URL")

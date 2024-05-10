@@ -23,20 +23,19 @@ class InvoiceAdmin(MyBaseModelAdmin):
 
     formatted_amount.short_description = "Tổng cộng"
 
-    list_display = (
-        "id",
-        "formatted_amount",
-        "due_date",
-        "resident",
-    )
+    def get_queryset(self, request):
+        return super().get_queryset(request)
+
+    list_display = ("id", "formatted_amount", "due_date", "resident", "status")
     search_fields = (
         "id",
         "resident__pk",
         "resident__personal_information__full_name",
         "resident__personal_information__email",
         "resident__personal_information__phone_number",
+        "status",
     )
-    exclude = ("id",)
+    list_filter = ("status",)
     exclude = ("deleted",)
 
 
@@ -88,18 +87,8 @@ class PaymentAdmin(MyBaseModelAdmin):
 
 
 class OnlineWalletAdmin(MyBaseModelAdmin):
-    list_display = (
-        "id",
-        "payment",
-        "vnpay_billing",
-    )
-    search_fields = (
-        "id",
-        "payment__status",
-        "vnpay_billing__id",
-        "vnpay_billing__transaction_id",
-        "vnpay_billing__reference_number",
-    )
+    list_display = ("id", "payment", "reference_number", "transaction_id")
+    search_fields = ("id", "payment__status", "reference_number", "transaction_id")
     list_filter = ("payment__status",)
     exclude = ("deleted",)
 
