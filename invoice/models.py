@@ -45,6 +45,9 @@ class Invoice(MyBaseModelWithDeletedState):
         self.status = Invoice.InvoiceStatus.PAID
         self.save()
 
+    def message_invoice_create(self, action):
+        return f"{action} ({self.created_date.strftime('%d/%m/%Y')})"
+
     def __str__(self):
         return str(self.id)
 

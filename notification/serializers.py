@@ -1,10 +1,10 @@
 from rest_framework import serializers
 
-from app import settings
-from feedback.models import Feedback
-from invoice.models import ProofImage
-from news.models import News
-from service.models import ReissueCard, ServiceRegistration
+from notification.types import (
+    ACTION_MESSAGE_MAPPING,
+    ENTITY_TYPE_MODEL_MAPPING,
+    LINK_MAPPING,
+)
 
 from .models import FCMToken, Notification, NotificationContent
 
@@ -34,36 +34,6 @@ class FCMTokenSerializer(serializers.ModelSerializer):
             },
         )
         return obj, created
-
-
-ENTITY_TYPE_MODEL_MAPPING = {
-    "SERVICE_REGISTER": ServiceRegistration,
-    "SERVICE_REISSUE": ReissueCard,
-    "FEEDBACK_POST": Feedback,
-    "INVOICE_PROOF_IMAGE_PAYMENT": ProofImage,
-    "NEWS_POST": News,
-}
-
-ACTION_MESSAGE_MAPPING = {
-    "FEEDBACK_POST": lambda entity, notification_content: entity.message_feedback_post(
-        notification_content.get_entity_type_display().lower()
-    ),
-    "SERVICE_REGISTER": lambda entity,
-    notification_content: entity.message_service_register(
-        notification_content.get_entity_type_display().lower()
-    ),
-    "SERVICE_REISSUE": lambda entity,
-    notification_content: entity.message_service_reissue(
-        notification_content.get_entity_type_display().lower()
-    ),
-    "INVOICE_PROOF_IMAGE_PAYMENT": lambda entity,
-    notification_content: entity.message_proof_image_created(
-        notification_content.get_entity_type_display().lower()
-    ),
-    "NEWS_POST": lambda entity, notification_content: entity.message_news_post(
-        notification_content.get_entity_type_display().lower()
-    ),
-}
 
 
 class ReadNotificationSerializer(serializers.ModelSerializer):
@@ -117,14 +87,6 @@ class ClientNotificationSerializer(serializers.ModelSerializer):
             "created_date",
             "updated_date",
         ]
-
-
-LINK_MAPPING = {
-    "SERVICE_REGISTER": lambda entity_id: f"{settings.HOST}/admin/service/serviceregistration/{entity_id}/change/",
-    "SERVICE_REISSUE": lambda entity_id: f"{settings.HOST}/admin/service/reissuecard/{entity_id}/change/",
-    "FEEDBACK_POST": lambda entity_id: f"{settings.HOST}/admin/feedback/feedback/{entity_id}/change/",
-    "INVOICE_PROOF_IMAGE_PAYMENT": lambda entity_id: f"{settings.HOST}/admin/invoice/proofimage/{entity_id}/change/",
-}
 
 
 class AdminNotificationSerializer(ClientNotificationSerializer):
