@@ -59,14 +59,14 @@ INVOICE_RETRIEVE = {
     ],
 }
 
-INVOICE_VNPAY_PAYMENT = {
-    "description": "Pay invoice with vnpay",
+INVOICE_ONLINE_WALLET_PAYMENT = {
+    "description": "Pay invoice with online wallet",
     "request": None,
     "responses": {200: OpenApiTypes.STR},
 }
 
-INVOICE_VNPAY_RETURN = {
-    "description": "Return from vnpay",
+INVOICE_ONLINE_WALLET_RETURN = {
+    "description": "Return from online wallet",
     "request": None,
     "responses": {200: OpenApiTypes.STR},
 }

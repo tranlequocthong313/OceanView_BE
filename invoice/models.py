@@ -6,7 +6,6 @@ from django.db.models.base import post_save
 from django.db.models.signals import pre_save
 from django.dispatch import receiver
 from django.utils.translation import gettext_lazy as _
-from vnpay.models import Billing
 
 from app.models import MyBaseModel, MyBaseModelWithDeletedState
 from service.models import ServiceRegistration
@@ -22,10 +21,8 @@ class Invoice(MyBaseModelWithDeletedState):
     resident = models.ForeignKey(
         to=get_user_model(), verbose_name=_("Cư dân"), on_delete=models.CASCADE
     )
-    total_amount = models.DecimalField(
+    total_amount = models.PositiveBigIntegerField(
         _("Số tiền"),
-        max_digits=11,
-        decimal_places=2,
         validators=[MinValueValidator(0)],
         default=0,
     )
@@ -44,6 +41,7 @@ class Invoice(MyBaseModelWithDeletedState):
     def pay(self):
         self.status = Invoice.InvoiceStatus.PAID
         self.save()
+        return True
 
     def message_invoice_create(self, action):
         return f"{action} ({self.created_date.strftime('%d/%m/%Y')})"
@@ -63,8 +61,8 @@ class InvoiceDetail(MyBaseModelWithDeletedState):
         to=ServiceRegistration,
         on_delete=models.DO_NOTHING,
     )
-    amount = models.DecimalField(
-        _("Số tiền"), max_digits=11, decimal_places=2, validators=[MinValueValidator(0)]
+    amount = models.PositiveBigIntegerField(
+        _("Số tiền"), validators=[MinValueValidator(0)]
     )
 
     class Meta(MyBaseModel.Meta):
@@ -88,8 +86,8 @@ class Payment(MyBaseModelWithDeletedState):
     method = models.CharField(
         _("Phương thức thanh toán"), max_length=15, choices=PaymentMethod.choices
     )
-    total_amount = models.DecimalField(
-        _("Số tiền"), max_digits=11, decimal_places=2, validators=[MinValueValidator(0)]
+    total_amount = models.PositiveBigIntegerField(
+        _("Số tiền"), validators=[MinValueValidator(0)]
     )
     invoice = models.ForeignKey(
         verbose_name=_("Hóa đơn"), to=Invoice, on_delete=models.DO_NOTHING
@@ -101,14 +99,14 @@ class Payment(MyBaseModelWithDeletedState):
         max_length=20,
     )
 
-    @property
-    def is_success(self):
-        return self.status == Payment.PaymentStatus.SUCCESS
-
     def pay(self):
         self.status = Payment.PaymentStatus.SUCCESS
         self.save()
         return True
+
+    @property
+    def is_success(self):
+        return self.status == Payment.PaymentStatus.SUCCESS
 
     class Meta(MyBaseModel.Meta):
         verbose_name = _("Thanh toán")
@@ -143,23 +141,36 @@ class ProofImage(MyBaseModelWithDeletedState):
 
 
 class OnlineWallet(MyBaseModelWithDeletedState):
+    class WalletType(models.TextChoices):
+        VNPAY = "VNPAY", _("VnPay")
+        MOMO = "MOMO", _("Momo")
+
     payment = models.ForeignKey(
         verbose_name=_("Thanh toán"), to=Payment, on_delete=models.CASCADE
     )
-    vnpay_billing = models.OneToOneField(
-        verbose_name=_("Thanh toán vnpay"),
-        to=Billing,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
+    wallet_type = models.CharField(
+        verbose_name=_("Loại ví"), choices=WalletType.choices, max_length=10
+    )
+    transaction_id = models.CharField(
+        verbose_name=_("Mã giao dịch"), max_length=255, null=True, blank=True
+    )
+    reference_number = models.CharField(
+        verbose_name=_("Mã tham chiếu"), max_length=100, null=True, blank=True
     )
 
     class Meta(MyBaseModel.Meta):
         verbose_name = _("Thanh toán qua ví điện tử")
         verbose_name_plural = _("Thanh toán qua ví điện tử")
 
+    def pay(self, transaction_id=None):
+        if transaction_id:
+            self.transaction_id = transaction_id
+        result = self.payment.pay()
+        self.save()
+        return result
+
     def __str__(self):
-        return self.payment
+        return self.payment.__str__()
 
 
 class StatsRevenue(Invoice):

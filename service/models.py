@@ -27,10 +27,8 @@ class Service(MyBaseModel):
         choices=ServiceType.choices,
     )
     name = models.CharField(verbose_name=_("Tên dịch vụ"), max_length=50)
-    price = models.DecimalField(
+    price = models.PositiveBigIntegerField(
         _("Giá"),
-        max_digits=11,
-        decimal_places=0,
         validators=[MinValueValidator(0)],
     )
 
