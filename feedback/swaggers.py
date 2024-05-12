@@ -1,3 +1,4 @@
+from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiExample
 
 from utils import format
@@ -15,6 +16,7 @@ INVOICE = {
                 "title": "Không có nước",
                 "content": "Phòng A101 không có nước",
                 "type": format.format_enum_values(Feedback.FeedbackType),
+                "image": str(),
             },
         )
     ],

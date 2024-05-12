@@ -24,7 +24,7 @@ class EntityType(models.TextChoices):
     INVOICE_CREATE = "INVOICE_CREATE", _("Nhận hóa đơn")
 
 
-ENTITYP_TARGET = {
+ENTITY_TARGET = {
     "SERVICE_REGISTER": MessageTarget.ADMIN,
     "SERVICE_REISSUE": MessageTarget.ADMIN,
     "FEEDBACK_POST": MessageTarget.ADMIN,

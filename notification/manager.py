@@ -15,7 +15,7 @@ from notification.models import (
 from notification.serializers import LINK_MAPPING, NotificationContentSerializer
 from notification.types import (
     ACTION_MESSAGE_MAPPING,
-    ENTITYP_TARGET,
+    ENTITY_TARGET,
     EntityType,
     MessageTarget,
 )
@@ -55,7 +55,7 @@ class NotificationManager:
             raise ValueError("entity values must not be empty")
         if not image:
             image = sender.avatar_url or settings.LOGO
-        target = ENTITYP_TARGET[str(entity_type)]
+        target = ENTITY_TARGET[str(entity_type)]
         content = NotificationContent.objects.create(
             entity_id=entity.pk,
             entity_type=entity_type,
