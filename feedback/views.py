@@ -4,7 +4,6 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
-from firebase.message import send
 from notification.manager import NotificationManager
 from notification.types import EntityType
 
@@ -17,11 +16,11 @@ class FeedbackView(ModelViewSet):
     http_method_names = ["get", "post", "patch", "delete"]
 
     def get_queryset(self):
-        queries = models.Feedback.objects.filter(deleted=False).all()
+        queries = models.Feedback.objects.filter(deleted=False)
         if q := self.request.query_params.get("q"):
             queries = queries.filter(title__icontains=q)
 
-        return queries
+        return queries.order_by("-id")
 
     def get_serializer(self, *args, **kwargs):
         kwargs["context"] = {"user": self.request.user}
