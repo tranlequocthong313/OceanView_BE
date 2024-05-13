@@ -6,7 +6,7 @@ from utils import format
 from . import serializers
 from .models import Feedback
 
-INVOICE = {
+FEEDBACK = {
     "request": serializers.FeedbackSerializer,
     "responses": {200: serializers.FeedbackSerializer},
     "examples": [

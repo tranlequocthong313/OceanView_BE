@@ -8,7 +8,7 @@ from .models import Item, Locker
 class ItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = Item
-        fields = ["id", "name", "quantity", "image", "status"]
+        fields = ["id", "name", "quantity", "image", "status", "created_date"]
         read_only_fields = ["id"]
 
 

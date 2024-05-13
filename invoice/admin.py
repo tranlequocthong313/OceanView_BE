@@ -23,9 +23,6 @@ class InvoiceAdmin(MyBaseModelAdmin):
 
     formatted_amount.short_description = "Tổng cộng"
 
-    def get_queryset(self, request):
-        return super().get_queryset(request)
-
     list_display = ("id", "formatted_amount", "due_date", "resident", "status")
     search_fields = (
         "id",

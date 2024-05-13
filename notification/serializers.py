@@ -1,5 +1,6 @@
 from rest_framework import serializers
 
+from app import settings
 from notification.types import (
     ACTION_MESSAGE_MAPPING,
     ENTITY_TYPE_MODEL_MAPPING,
@@ -45,6 +46,12 @@ class ReadNotificationSerializer(serializers.ModelSerializer):
 
 
 class NotificationContentSerializer(serializers.ModelSerializer):
+    def to_representation(self, instance):
+        r = super().to_representation(instance)
+        if not r["image"]:
+            r["image"] = settings.LOGO
+        return r
+
     class Meta:
         model = NotificationContent
         fields = ["id", "entity_type", "entity_id", "image"]

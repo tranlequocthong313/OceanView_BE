@@ -31,7 +31,7 @@ class LockerView(ListAPIView, ViewSet):
                     | Q(owner__personal_information__phone_number__icontains=q)
                     | Q(owner__personal_information__email__icontains=q)
                 )
-        return queryset
+        return queryset.order_by("-id")
 
     def get_serializer_class(self):
         if self.action == "list":

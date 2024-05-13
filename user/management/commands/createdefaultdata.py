@@ -51,7 +51,7 @@ class Command(BaseCommand):
                     Service(
                         id=Service.ServiceType.MANAGING,
                         name="Quản lý",
-                        price=150000,
+                        price=5000,
                     ),
                     Service(
                         id=Service.ServiceType.ACCESS_CARD,
@@ -66,17 +66,17 @@ class Command(BaseCommand):
                     Service(
                         id=Service.ServiceType.BICYCLE_PARKING_CARD,
                         name="Thẻ gửi xe đạp",
-                        price=70000,
+                        price=2500,
                     ),
                     Service(
                         id=Service.ServiceType.MOTOR_PARKING_CARD,
                         name="Thẻ gửi xe máy",
-                        price=200000,
+                        price=8000,
                     ),
                     Service(
                         id=Service.ServiceType.CAR_PARKING_CARD,
                         name="Thẻ gửi xe ô tô",
-                        price=1500000,
+                        price=50000,
                     ),
                 ],
                 ignore_conflicts=True,

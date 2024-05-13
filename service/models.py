@@ -4,6 +4,7 @@ from django.contrib.auth import get_user_model
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.validators import MinLengthValidator, MinValueValidator
 from django.db import models
+from django.utils import choices
 from django.utils.translation import gettext_lazy as _
 
 from apartment.models import Apartment
@@ -82,6 +83,12 @@ class ServiceRegistration(MyBaseModelWithDeletedState):
         REJECT = "REJECT", _("Bị từ chối")
         CANCELED = "CANCELED", _("Đã hủy")
 
+    class Payment(models.TextChoices):
+        FREE = "FREE", _("Miễn phí")
+        DAILY = "DAILY", _("Theo ngày")
+        MONTHLY = "MONTHLY", _("Theo tháng")
+        IMMEDIATELY = "IMMEDIATELY", _("Ngay lúc đăng ký")
+
     service = models.ForeignKey(
         verbose_name=_("Dịch vụ"),
         to=Service,
@@ -107,6 +114,12 @@ class ServiceRegistration(MyBaseModelWithDeletedState):
         on_delete=models.CASCADE,
         null=True,
         blank=True,
+    )
+    payment = models.CharField(
+        verbose_name=_("Hình thức thanh toán"),
+        choices=Payment.choices,
+        max_length=20,
+        default=Payment.MONTHLY,
     )
 
     def message_service_register(self, action):

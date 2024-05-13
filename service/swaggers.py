@@ -18,7 +18,7 @@ SERVICE_HISTORY = {
             examples=[
                 OpenApiExample(
                     "Example",
-                    value="access | parking",
+                    value="access | parking | resident",
                 ),
             ],
         ),

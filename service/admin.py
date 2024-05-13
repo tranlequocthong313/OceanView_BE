@@ -5,6 +5,7 @@ from django.http import HttpRequest
 from django.utils.translation import gettext_lazy as _
 
 from app.admin import MyBaseModelAdmin, admin_site
+from user.admin import issue_account
 from utils import format
 
 from .models import (
@@ -59,6 +60,7 @@ class ServiceRegistrationAdmin(MyBaseModelAdmin):
         "personal_information",
         "resident",
         "apartment",
+        "payment",
         "status",
     )
     search_fields = (
@@ -70,9 +72,19 @@ class ServiceRegistrationAdmin(MyBaseModelAdmin):
         "resident__resident_id",
         "apartment__pk",
         "status",
+        "payment",
     )
     exclude = ("deleted",)
-    list_filter = ("status",)
+    list_filter = ("status", "service__id", "payment")
+
+    def save_model(self, request, obj, form, change):
+        super().save_model(request, obj, form, change)
+        if (
+            obj.is_approved
+            and obj.service.id == Service.ServiceType.RESIDENT_CARD
+            and issue_account(request, obj.personal_information)
+        ):
+            obj.personal_information.user.apartment_set.add(obj.apartment_id)
 
     def has_add_permission(self, request, obj=None):
         return False

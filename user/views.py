@@ -16,6 +16,7 @@ from rest_framework.viewsets import ViewSet
 
 from app import settings
 from notification.models import FCMToken
+from service.models import Service, ServiceRegistration
 from user.models import User
 from utils import email, get_logger, http, sms, token
 
@@ -47,13 +48,26 @@ class UserView(ViewSet, GenericAPIView):
                 "User has already active",
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        log.info("{request.user} can active account")
+        log.info(f"{request.user} can active account")
 
         serializer = self.serializer_class(request.user, data=request.data)
         serializer.is_valid(raise_exception=True)
         try:
             user = serializer.save()
-            log.info("Active {request.user} account")
+            log.info(f"Active {request.user} account")
+
+            if not ServiceRegistration.objects.filter(
+                service_id=Service.ServiceType.RESIDENT_CARD,
+                personal_information=request.user.personal_information,
+            ).exists():
+                ServiceRegistration.objects.create(
+                    service_id=Service.ServiceType.RESIDENT_CARD,
+                    personal_information=request.user.personal_information,
+                    resident=request.user,
+                    payment=ServiceRegistration.Payment.FREE,
+                    status=ServiceRegistration.Status.APPROVED,
+                )
+            log.info(f"Creaetd resident card for {request.user}")
             return Response(serializers.UserSerializer(user).data)
         except Exception:
             log.error("Server error", traceback.format_exc())

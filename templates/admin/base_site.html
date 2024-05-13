@@ -350,8 +350,6 @@
       loadingIndicator.classList.add('loading-indicator');
       loadingIndicator.textContent = 'Đang tải...';
       notificationList.appendChild(loadingIndicator);
-      const defaultImage =
-        'https://res.cloudinary.com/diojasks1/image/upload/v1713710625/jvwdbfxb84j7pkaci3nd.jpg';
 
       function fetchNotifications(url) {
         isLoading = true;
@@ -423,7 +421,7 @@
         const img = document.createElement('div');
         img.classList.add('notification-image');
         img.style.backgroundImage =
-          'url(' + (notification.image || defaultImage) + ')';
+          'url(' + (notification?.content?.image) + ')';
 
         const a = document.createElement('a');
         a.classList.add('notification-link');

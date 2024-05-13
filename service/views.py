@@ -48,6 +48,9 @@ class ServiceRegistrationView(DestroyAPIView, ReadOnlyModelViewSet):
             categories = {
                 "access": queryset.filter(service__id=Service.ServiceType.ACCESS_CARD),
                 "parking": queryset.filter(service__id__in=Service.parking_services()),
+                "resident": queryset.filter(
+                    service__id=Service.ServiceType.RESIDENT_CARD
+                ),
             }
 
             if category and category in categories:
@@ -57,7 +60,7 @@ class ServiceRegistrationView(DestroyAPIView, ReadOnlyModelViewSet):
             if exclude_status:
                 queryset = queryset.exclude(status=exclude_status)
 
-        return queryset
+        return queryset.order_by("-id")
 
     def registered_service(self, service_id, personal_information):
         return ServiceRegistration.objects.filter(
@@ -150,6 +153,7 @@ class ServiceRegistrationView(DestroyAPIView, ReadOnlyModelViewSet):
                 service_id=Service.ServiceType.ACCESS_CARD,
                 personal_information=personal_information,
                 resident=request.user,
+                payment=ServiceRegistration.Payment.IMMEDIATELY,
             )
             NotificationManager.create_notification(
                 entity=service_registration,
@@ -240,6 +244,7 @@ class ServiceRegistrationView(DestroyAPIView, ReadOnlyModelViewSet):
                 personal_information=personal_information,
                 resident=request.user,
                 apartment_id=room_number,
+                payment=ServiceRegistration.Payment.IMMEDIATELY,
             )
             NotificationManager.create_notification(
                 entity=service_registration,
@@ -345,6 +350,7 @@ class ServiceRegistrationView(DestroyAPIView, ReadOnlyModelViewSet):
                     personal_information=personal_information,
                     resident=request.user,
                     apartment_id=room_number,
+                    payment=ServiceRegistration.Payment.MONTHLY,
                 )
                 Vehicle.objects.create(
                     license_plate=vehicle["license_plate"],
