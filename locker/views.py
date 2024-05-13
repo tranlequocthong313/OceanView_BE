@@ -31,7 +31,7 @@ class LockerView(ListAPIView, ViewSet):
                     | Q(owner__personal_information__phone_number__icontains=q)
                     | Q(owner__personal_information__email__icontains=q)
                 )
-        return queryset.order_by("-id")
+        return queryset
 
     def get_serializer_class(self):
         if self.action == "list":
@@ -64,7 +64,7 @@ class ItemView(UpdateAPIView, CreateAPIView, ReadOnlyModelViewSet):
             if exclude_status:
                 queryset = queryset.exclude(status=exclude_status)
 
-        return queryset
+        return queryset.order_by("-id")
 
     def perform_create(self, serializer):
         serializer.save(locker_id=self.kwargs["locker_id"])
