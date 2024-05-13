@@ -39,6 +39,7 @@ user_response_example = {
     "is_superuser": False,
     "status": format.format_enum_values(User.Status),
     "issued_by": "240001",
+    "locker": 101,
 }
 
 USER_ACTIVE = {

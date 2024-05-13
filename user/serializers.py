@@ -37,6 +37,7 @@ class PersonalInformationSerializer(serializers.ModelSerializer):
 class UserSerializer(serializers.ModelSerializer):
     personal_information = PersonalInformationSerializer(read_only=True)
     apartment_set = serializers.PrimaryKeyRelatedField(read_only=True, many=True)
+    locker = serializers.PrimaryKeyRelatedField(read_only=True)
 
     def to_representation(self, instance):
         rep = super().to_representation(instance)
@@ -56,6 +57,7 @@ class UserSerializer(serializers.ModelSerializer):
             "is_superuser",
             "status",
             "issued_by",
+            "locker",
         )
         extra_kwargs = {"password": {"write_only": "true"}}
 
