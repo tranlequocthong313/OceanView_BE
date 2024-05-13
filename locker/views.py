@@ -5,7 +5,7 @@ from rest_framework.generics import (
     ListAPIView,
     UpdateAPIView,
 )
-from rest_framework.permissions import IsAdminUser
+from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from rest_framework.viewsets import ReadOnlyModelViewSet, ViewSet
 
 from utils import get_logger
@@ -48,6 +48,17 @@ class ItemView(UpdateAPIView, CreateAPIView, ReadOnlyModelViewSet):
     permission_classes = [IsAdminUser]
     http_method_names = ["get", "post", "patch"]
     lookup_url_kwarg = "item_id"
+
+    def get_permissions(self):
+        locker_id = self.kwargs.get("locker_id", None)
+        if (
+            locker_id
+            and self.action in ["list", "retrieve"]
+            and not self.request.user.is_staff
+            and int(locker_id) == self.request.user.locker.id
+        ):
+            return [IsAuthenticated()]
+        return super().get_permissions()
 
     def get_queryset(self):
         queryset = Item.objects.filter(locker_id=self.kwargs["locker_id"]).all()
