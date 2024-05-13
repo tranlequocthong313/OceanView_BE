@@ -172,3 +172,5 @@ mysql
 secrets
 
 firebase-cred.json
+
+cron-log.txt

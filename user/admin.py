@@ -18,6 +18,82 @@ from .models import PersonalInformation, User
 log = get_logger(__name__)
 
 
+@transaction.atomic
+def handle_issue_account(request, personal_information):
+    if personal_information.is_issued() is False:
+        user = None
+        try:
+            password = get_user_model().objects.make_random_password()
+            if personal_information.has_account():
+                user = personal_information.user
+                user.change_password(password)
+                log.info("Update new password in case user had one")
+            else:
+                user = get_user_model().create_user(
+                    password=password,
+                    personal_information=personal_information,
+                    issued_by=request.user,
+                )
+                log.info("Created new account")
+
+            # * Prioritize sending emails instead of SMS because Twilio service has many limitations during trial use. Will change priority if Twilio account can be purchased. Do not send accounts asynchronously, as this is a mandatory step otherwise the account granting process will be considered failed.
+            if user.personal_information.email is not None:
+                send_mail(
+                    subject="Cấp phát tài khoản",
+                    template="account/email/issue_email",
+                    recipient_list=[personal_information.email],
+                    user=user,
+                    password=password,
+                )
+                log.info("Sent account to mail")
+            else:
+                send_sms(
+                    template="account/sms/issue_sms",
+                    to=user.personal_information.phone_number,
+                    user=user,
+                    password=password,
+                )
+                log.info("Sent account to sms")
+
+            log.info(f"issued new account: {user}")
+            user.issue()
+            user.save()
+            return True
+        except OverflowError as err:
+            log.error(traceback.format_exc())
+            messages.add_message(request, messages.ERROR, err)
+        except SMTPAuthenticationError as e:
+            log.error(traceback.format_exc())
+        except SMTPException:
+            log.error(traceback.format_exc())
+        return False
+    else:
+        log.error("Account has been issued before")
+        messages.add_message(request, messages.ERROR, "account has been issued before")
+
+
+def issue_account(request, personal_information):
+    try:
+        if handle_issue_account(request, personal_information):
+            messages.add_message(
+                request,
+                messages.SUCCESS,
+                f"Issue account {personal_information} successfully",
+            )
+            return True
+        else:
+            messages.add_message(
+                request,
+                messages.ERROR,
+                f"Issue account {personal_information} failed",
+            )
+            return False
+    except Exception:
+        log.error(traceback.format_exc())
+        messages.add_message(request, messages.ERROR, "something went wrong")
+        return False
+
+
 class MyUserAdmin(MyBaseModelAdmin):
     model = get_user_model()
     list_display = (
@@ -121,89 +197,16 @@ class PersonalInformationAdmin(MyBaseModelAdmin):
         if obj.user:
             return obj.user.get_status_display()
 
-    @transaction.atomic
-    def issue_account(self, request, personal_information):
-        if personal_information.is_issued() is False:
-            user = None
-            try:
-                password = get_user_model().objects.make_random_password()
-                if personal_information.has_account():
-                    user = personal_information.user
-                    user.change_password(password)
-                    log.info("Update new password in case user had one")
-                else:
-                    user = get_user_model().create_user(
-                        password=password,
-                        personal_information=personal_information,
-                        issued_by=request.user,
-                    )
-                    log.info("Created new account")
-
-                # * Prioritize sending emails instead of SMS because Twilio service has many limitations during trial use. Will change priority if Twilio account can be purchased. Do not send accounts asynchronously, as this is a mandatory step otherwise the account granting process will be considered failed.
-                if user.personal_information.email is not None:
-                    send_mail(
-                        subject="Cấp phát tài khoản",
-                        template="account/email/issue_email",
-                        recipient_list=[personal_information.email],
-                        user=user,
-                        password=password,
-                    )
-                    log.info("Sent account to mail")
-                else:
-                    send_sms(
-                        template="account/sms/issue_sms",
-                        to=user.personal_information.phone_number,
-                        user=user,
-                        password=password,
-                    )
-                    log.info("Sent account to sms")
-
-                log.info(f"issued new account: {user}")
-                user.issue()
-                user.save()
-                return True
-            except OverflowError as err:
-                log.error(traceback.format_exc())
-                messages.add_message(request, messages.ERROR, err)
-            except SMTPAuthenticationError as e:
-                log.error(traceback.format_exc())
-            except SMTPException:
-                log.error(traceback.format_exc())
-            return False
-        else:
-            log.error("Account has been issued before")
-            messages.add_message(
-                request, messages.ERROR, "account has been issued before"
-            )
-
-    def inform_issue_account_status(self, request, personal_information):
-        try:
-            if self.issue_account(request, personal_information):
-                messages.add_message(
-                    request,
-                    messages.SUCCESS,
-                    f"Issue account {personal_information} successfully",
-                )
-            else:
-                messages.add_message(
-                    request,
-                    messages.ERROR,
-                    f"Issue account {personal_information} failed",
-                )
-        except Exception:
-            log.error(traceback.format_exc())
-            messages.add_message(request, messages.ERROR, "something went wrong")
-
     def response_change(self, request, obj):
         if "_issue-account" in request.POST:
-            self.inform_issue_account_status(request, obj)
+            issue_account(request, obj)
             return HttpResponseRedirect(".")
         return super().response_change(request, obj)
 
     @admin.action(description="Cấp phát tài khoản")
     def issue_accounts(self, request, queryset):
         for personal_information in queryset:
-            self.inform_issue_account_status(request, personal_information)
+            issue_account(request, personal_information)
 
 
 admin_site.register(PersonalInformation, PersonalInformationAdmin)
