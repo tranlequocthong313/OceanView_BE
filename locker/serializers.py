@@ -6,6 +6,12 @@ from .models import Item, Locker
 
 
 class ItemSerializer(serializers.ModelSerializer):
+    def to_representation(self, instance):
+        rep = super().to_representation(instance)
+        rep["image"] = instance.image_url
+
+        return rep
+
     class Meta:
         model = Item
         fields = ["id", "name", "quantity", "image", "status", "created_date"]
