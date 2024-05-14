@@ -58,6 +58,7 @@ class UserSerializer(serializers.ModelSerializer):
             "status",
             "issued_by",
             "locker",
+            "number_of_unread_notifications",
         )
         extra_kwargs = {"password": {"write_only": "true"}}
 
