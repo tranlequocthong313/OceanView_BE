@@ -23,9 +23,6 @@ class Feedback(MyBaseModelWithDeletedState):
         verbose_name=_("Tác giả"), to=User, on_delete=models.CASCADE
     )
 
-    def message_feedback_post(self, action):
-        return f"{self.author} {action}: {self.__str__()}"
-
     class Meta:
         verbose_name = _("Phản ánh")
         verbose_name_plural = _("Phản ánh")

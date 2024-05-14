@@ -1,8 +1,13 @@
-from ckeditor_uploader.widgets import CKEditorUploadingWidget
 from django import forms
+from django.db.models.base import post_save
+from django.dispatch import receiver
+from django_ckeditor_5.widgets import CKEditor5Widget
 
+from app import settings
 from app.admin import MyBaseModelAdmin, admin_site
 from news.models import News, NewsCategory
+from notification.manager import NotificationManager
+from notification.types import EntityType
 
 
 class NewsCategoryAdmin(MyBaseModelAdmin):
@@ -12,7 +17,7 @@ class NewsCategoryAdmin(MyBaseModelAdmin):
 
 
 class NewsForm(forms.ModelForm):
-    content = forms.CharField(widget=CKEditorUploadingWidget)
+    content = forms.CharField(widget=CKEditor5Widget)
 
     class Meta:
         model = News
@@ -24,6 +29,14 @@ class NewsAdmin(MyBaseModelAdmin):
     search_fields = ("title", "category__name")
     list_filter = ("category__name",)
     form = NewsForm
+
+
+@receiver(post_save, sender=News)
+def send_broadcast(sender, instance, created, **kwargs):
+    if created and instance.is_broadcast:
+        NotificationManager.create_notification(
+            entity=instance, entity_type=EntityType.NEWS_POST, image=settings.LOGO
+        )
 
 
 admin_site.register(News, NewsAdmin)

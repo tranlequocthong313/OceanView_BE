@@ -4,12 +4,17 @@ from typing import Any
 
 from django.contrib import admin
 from django.db.models import Sum
+from django.db.models.base import post_save
+from django.dispatch import receiver
 from django.http import HttpRequest
 from django.utils.html import mark_safe
 from vnpay.admin import BillingAdmin
 from vnpay.models import Billing
 
+from app import settings
 from app.admin import MyBaseModelAdmin, admin_site
+from notification.manager import NotificationManager
+from notification.types import EntityType
 from utils import format, get_logger
 
 from . import models
@@ -33,7 +38,7 @@ class InvoiceAdmin(MyBaseModelAdmin):
         "status",
     )
     list_filter = ("status",)
-    exclude = ("deleted",)
+    exclude = ("deleted", "id")
 
 
 class InvoiceDetailAdmin(MyBaseModelAdmin):
@@ -172,6 +177,17 @@ class StatsRevenueAdmin(admin.ModelAdmin):
 
     def has_change_permission(self, request, obj=None):
         return False
+
+
+@receiver(post_save, sender=models.Invoice)
+def notifiy_to_resident(sender, instance, created, **kwargs):
+    if created:
+        NotificationManager.create_notification(
+            entity=instance,
+            entity_type=EntityType.INVOICE_CREATE,
+            image=settings.LOGO,
+            filters={"resident_id": instance.resident.resident_id},
+        )
 
 
 admin_site.register(models.Invoice, InvoiceAdmin)

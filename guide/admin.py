@@ -1,5 +1,5 @@
-from ckeditor_uploader.widgets import CKEditorUploadingWidget
 from django import forms
+from django_ckeditor_5.widgets import CKEditor5Widget
 
 from app.admin import MyBaseModelAdmin, admin_site
 from guide.models import Guide, GuideCategory
@@ -12,7 +12,7 @@ class GuideCategoryAdmin(MyBaseModelAdmin):
 
 
 class GuideForm(forms.ModelForm):
-    content = forms.CharField(widget=CKEditorUploadingWidget)
+    content = forms.CharField(widget=CKEditor5Widget)
 
     class Meta:
         model = Guide

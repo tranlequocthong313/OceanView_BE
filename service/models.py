@@ -4,7 +4,6 @@ from django.contrib.auth import get_user_model
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.validators import MinLengthValidator, MinValueValidator
 from django.db import models
-from django.utils import choices
 from django.utils.translation import gettext_lazy as _
 
 from apartment.models import Apartment
@@ -76,13 +75,52 @@ class Relative(MyBaseModel):
         return self.personal_information.__str__()
 
 
-class ServiceRegistration(MyBaseModelWithDeletedState):
+class MyBaseServiceStatus(MyBaseModelWithDeletedState):
     class Status(models.TextChoices):
         WAITING_FOR_APPROVAL = "WAITING_FOR_APPROVAL", _("Chờ được xét duyệt")
         APPROVED = "APPROVED", _("Đã được duyệt")
-        REJECT = "REJECT", _("Bị từ chối")
+        REJECTED = "REJECTED", _("Bị từ chối")
         CANCELED = "CANCELED", _("Đã hủy")
 
+    status = models.CharField(
+        _("Trạng thái"),
+        max_length=30,
+        choices=Status,
+        default=Status.WAITING_FOR_APPROVAL,
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.__prev_status = self.status
+
+    @property
+    def status_changed(self):
+        return self.__prev_status != self.status
+
+    def save(
+        self, force_insert=False, force_update=False, using=None, update_fields=None
+    ):
+        super().save(force_insert, force_update, using, update_fields)
+        self.__prev_status = self.status
+
+    def cancel(self):
+        self.status = MyBaseServiceStatus.Status.CANCELED
+        self.save()
+        return True
+
+    @property
+    def is_approved(self):
+        return self.status == MyBaseServiceStatus.Status.APPROVED
+
+    @property
+    def is_canceled(self):
+        return self.status == MyBaseServiceStatus.Status.CANCELED
+
+    class Meta:
+        abstract = True
+
+
+class ServiceRegistration(MyBaseServiceStatus):
     class Payment(models.TextChoices):
         FREE = "FREE", _("Miễn phí")
         DAILY = "DAILY", _("Theo ngày")
@@ -102,12 +140,6 @@ class ServiceRegistration(MyBaseModelWithDeletedState):
     resident = models.ForeignKey(
         verbose_name=_("Cư dân đăng ký"), to=get_user_model(), on_delete=models.CASCADE
     )
-    status = models.CharField(
-        _("Trạng thái"),
-        max_length=30,
-        choices=Status,
-        default=Status.WAITING_FOR_APPROVAL,
-    )
     apartment = models.ForeignKey(
         verbose_name=_("Căn hộ"),
         to=Apartment,
@@ -122,25 +154,9 @@ class ServiceRegistration(MyBaseModelWithDeletedState):
         default=Payment.MONTHLY,
     )
 
-    def message_service_register(self, action):
-        return f"{self.resident.__str__()} {action} {self.service.get_id_display().lower()}."
-
     class Meta:
         verbose_name = _("Đăng ký dịch vụ")
         verbose_name_plural = _("Đăng ký dịch vụ")
-
-    def cancel(self):
-        self.status = ServiceRegistration.Status.CANCELED
-        self.save()
-        return True
-
-    @property
-    def is_approved(self):
-        return self.status == ServiceRegistration.Status.APPROVED
-
-    @property
-    def is_canceled(self):
-        return self.status == ServiceRegistration.Status.CANCELED
 
     @property
     def has_vehicle(self):
@@ -201,21 +217,12 @@ class Vehicle(MyBaseModel):
         return idS[vehicle_type]
 
 
-class ReissueCard(MyBaseModelWithDeletedState):
+class ReissueCard(MyBaseServiceStatus):
     service_registration = models.ForeignKey(
         verbose_name=_("Đăng ký dịch vụ"),
         to=ServiceRegistration,
         on_delete=models.CASCADE,
     )
-    status = models.CharField(
-        _("Trạng thái"),
-        max_length=30,
-        choices=ServiceRegistration.Status.choices,
-        default=ServiceRegistration.Status.WAITING_FOR_APPROVAL,
-    )
-
-    def message_service_reissue(self, action):
-        return f"{self.service_registration.resident.__str__()} {action} {self.service_registration.service.get_id_display()}."
 
     class Meta:
         verbose_name = _("Cấp  lại thẻ")

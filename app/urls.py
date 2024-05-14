@@ -1,6 +1,8 @@
+from django.conf import settings
+from django.conf.urls.static import static
 from django.contrib.auth.views import LoginView, LogoutView
 from django.shortcuts import redirect
-from django.urls import include, path, re_path
+from django.urls import include, path
 from drf_spectacular.views import (
     SpectacularAPIView,
     SpectacularSwaggerView,
@@ -33,5 +35,6 @@ urlpatterns = [
         name="swagger-ui",
     ),
     path("swagger/download/", SpectacularAPIView.as_view(), name="schema"),
-    re_path(r"^ckeditor/", include("ckeditor_uploader.urls")),
-]
+    path("ckeditor5/", include("django_ckeditor_5.urls")),
+    path("ckeditor/", include("ckeditor_uploader.urls")),
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -2,7 +2,7 @@ from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiExample, OpenApiParameter
 
 from service import serializers
-from service.models import Service, ServiceRegistration, Vehicle
+from service.models import MyBaseServiceStatus, Service, Vehicle
 from utils import format
 
 SERVICE_HISTORY = {
@@ -30,7 +30,7 @@ SERVICE_HISTORY = {
             examples=[
                 OpenApiExample(
                     "Example",
-                    value=format.format_enum_values(ServiceRegistration.Status),
+                    value=format.format_enum_values(MyBaseServiceStatus.Status),
                 ),
             ],
         ),
@@ -42,7 +42,7 @@ SERVICE_HISTORY = {
             examples=[
                 OpenApiExample(
                     "Example",
-                    value=format.format_enum_values(ServiceRegistration.Status),
+                    value=format.format_enum_values(MyBaseServiceStatus.Status),
                 ),
             ],
         ),
@@ -79,7 +79,7 @@ SERVICE_ACCESS_CARD = {
                     "name": "Thẻ ra vào",
                     "price": "55000",
                 },
-                "status": format.format_enum_values(ServiceRegistration.Status),
+                "status": format.format_enum_values(MyBaseServiceStatus.Status),
             },
             response_only=True,
         ),
@@ -117,7 +117,7 @@ SERVICE_RESIDENT_CARD = {
                     "name": "Thẻ cư dân",
                     "price": "55000",
                 },
-                "status": format.format_enum_values(ServiceRegistration.Status),
+                "status": format.format_enum_values(MyBaseServiceStatus.Status),
             },
             response_only=True,
         ),
@@ -159,7 +159,7 @@ SERVICE_PARKING_CARD = {
                     "name": "Thẻ gửi xe",
                     "price": "250000",
                 },
-                "status": format.format_enum_values(ServiceRegistration.Status),
+                "status": format.format_enum_values(MyBaseServiceStatus.Status),
             },
             response_only=True,
         ),

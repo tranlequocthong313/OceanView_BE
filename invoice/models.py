@@ -17,7 +17,7 @@ class Invoice(MyBaseModelWithDeletedState):
         PAID = "PAID", _("Đã thanh toán")
         OVERDUE = "OVERDUE", _("Quá hạn")
 
-    id = models.CharField(_("Mã hóa đơn"), max_length=10, primary_key=True)
+    id = models.CharField(_("Mã hóa đơn"), max_length=10, primary_key=True, blank=True)
     resident = models.ForeignKey(
         to=get_user_model(), verbose_name=_("Cư dân"), on_delete=models.CASCADE
     )
@@ -42,9 +42,6 @@ class Invoice(MyBaseModelWithDeletedState):
         self.status = Invoice.InvoiceStatus.PAID
         self.save()
         return True
-
-    def message_invoice_create(self, action):
-        return f"{action} ({self.created_date.strftime('%d/%m/%Y')})"
 
     def __str__(self):
         return str(self.id)
@@ -125,9 +122,6 @@ class ProofImage(MyBaseModelWithDeletedState):
     class Meta(MyBaseModel.Meta):
         verbose_name = _("Ảnh chứng minh")
         verbose_name_plural = _("Ảnh chứng minh")
-
-    def message_proof_image_created(self, action):
-        return f"{self.payment.invoice.resident} {action}: {self.payment.get_method_display()}"
 
     @property
     def image_url(self):

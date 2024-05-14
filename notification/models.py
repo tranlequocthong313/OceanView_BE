@@ -33,7 +33,7 @@ class NotificationContent(MyBaseModel):
     entity_type = models.CharField(
         verbose_name=_("Loại thông báo"), choices=EntityType.choices, max_length=100
     )
-    entity_id = models.PositiveBigIntegerField()
+    entity_id = models.CharField(verbose_name=_("Mã thực thể"), max_length=100)
 
     class Meta:
         verbose_name = _("Nội dung thông báo")
