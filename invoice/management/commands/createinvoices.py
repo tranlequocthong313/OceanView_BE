@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 from django.core.management.base import BaseCommand
 
 from invoice.models import Invoice, InvoiceDetail
-from service.models import ServiceRegistration
+from service.models import MyBaseServiceStatus, ServiceRegistration
 
 
 class Command(BaseCommand):
@@ -19,7 +19,7 @@ class Command(BaseCommand):
         ) - timedelta(days=1)
 
         service_registrations = ServiceRegistration.objects.filter(
-            status=ServiceRegistration.Status.APPROVED,
+            status=MyBaseServiceStatus.Status.APPROVED,
             created_date__gte=first_day_of_month,
             created_date__lte=last_day_of_month,
         )

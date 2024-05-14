@@ -478,6 +478,7 @@
 
       function handleServiceWorkerMessage(event) {
         const payload = event?.data;
+        console.log(payload)
         if (payload) {
           const notification = {
             id: Math.random().toString(),
@@ -486,7 +487,7 @@
             message: payload.notification?.title || '',
             created_date: new Date().toISOString(),
             updated_date: new Date().toISOString(),
-            image: payload.notification?.image || null,
+            image: payload.notification?.image || payload.notificaiton?.content?.image,
             has_been_read: false,
             content: JSON.parse(payload?.data?.content),
           };

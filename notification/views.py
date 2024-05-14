@@ -22,15 +22,15 @@ class FCMTokenView(NonAccessTokenPermissionMixin, CreateAPIView, ViewSet):
     serializer_class = serializers.FCMTokenSerializer
     permission_classes = [IsAuthenticated]
 
+    # TODO: validate tokens by sending tokens to a topic
     @extend_schema(**swaggers.NOTIFICATION_POST_FCM_TOKEN)
     def create(self, request, *args, **kwargs):
-        print(request.user)
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
 
         try:
             fcm_token, created = serializer.save(user=request.user)
-            # * Avoid sending too much information about the token to the client
+            # NOTE: Avoid sending too much information about tokens to clients
             if created:
                 log.info(
                     f"Saved fcm token {fcm_token.token} of {self.request.user} successfully"
@@ -39,7 +39,10 @@ class FCMTokenView(NonAccessTokenPermissionMixin, CreateAPIView, ViewSet):
                 log.info(
                     f"Updated fcm token {fcm_token.token} of {self.request.user} successfully"
                 )
-            if request.user.is_staff:
+            if (
+                request.user.is_staff
+                and serializer.validated_data["device_type"] == "WEB"
+            ):
                 topic.subscribe_to_topic(fcm_tokens=fcm_token.token, topic="admin")
             else:
                 topic.subscribe_to_topic(fcm_tokens=fcm_token.token, topic="resident")

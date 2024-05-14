@@ -1,6 +1,6 @@
-from ckeditor.fields import RichTextField
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+from django_ckeditor_5.fields import CKEditor5Field
 
 from app.models import MyBaseModel
 
@@ -18,7 +18,7 @@ class GuideCategory(MyBaseModel):
 
 class Guide(MyBaseModel):
     title = models.CharField(verbose_name=_("Tiêu đề"), max_length=50)
-    content = RichTextField(verbose_name=_("Nội dung"))
+    content = CKEditor5Field(verbose_name=_("Nội dung"), config_name="extends")
     category = models.ForeignKey(
         verbose_name=_("Danh mục"),
         to=GuideCategory,

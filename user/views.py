@@ -16,7 +16,7 @@ from rest_framework.viewsets import ViewSet
 
 from app import settings
 from notification.models import FCMToken
-from service.models import Service, ServiceRegistration
+from service.models import MyBaseServiceStatus, Service, ServiceRegistration
 from user.models import User
 from utils import email, get_logger, http, sms, token
 
@@ -65,7 +65,7 @@ class UserView(ViewSet, GenericAPIView):
                     personal_information=request.user.personal_information,
                     resident=request.user,
                     payment=ServiceRegistration.Payment.FREE,
-                    status=ServiceRegistration.Status.APPROVED,
+                    status=MyBaseServiceStatus.Status.APPROVED,
                 )
             log.info(f"Creaetd resident card for {request.user}")
             return Response(serializers.UserSerializer(user).data)

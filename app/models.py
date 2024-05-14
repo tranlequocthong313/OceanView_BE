@@ -2,6 +2,8 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 
 
+# NOTE: I hate naming things with "My", but if I didn't do that we would be confused by
+# the framework's classes 🤷🤷
 class MyBaseModel(models.Model):
     created_date = models.DateTimeField(_("Ngày tạo"), auto_now_add=True)
     updated_date = models.DateTimeField(_("Ngày cập nhật"), auto_now=True)

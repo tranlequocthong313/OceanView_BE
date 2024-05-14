@@ -4,11 +4,14 @@ from django.contrib import admin
 from django.http import HttpRequest
 from django.utils.translation import gettext_lazy as _
 
+from app import settings
 from app.admin import MyBaseModelAdmin, admin_site
+from notification.manager import NotificationManager
+from notification.types import EntityType
 from user.admin import issue_account
-from utils import format
 
 from .models import (
+    MyBaseServiceStatus,
     ReissueCard,
     Relative,
     Service,
@@ -53,6 +56,19 @@ class ServiceAdmin(MyBaseModelAdmin):
     list_filter = ("id",)
 
 
+def send_notification(obj, approved_entity, rejected_entity, filters):
+    if obj.status_changed and obj.status in [
+        MyBaseServiceStatus.Status.APPROVED,
+        MyBaseServiceStatus.Status.REJECTED,
+    ]:
+        NotificationManager.create_notification(
+            entity=obj,
+            entity_type=(approved_entity if obj.is_approved else rejected_entity),
+            filters=filters,
+            image=settings.LOGO,
+        )
+
+
 class ServiceRegistrationAdmin(MyBaseModelAdmin):
     list_display = (
         "id",
@@ -78,6 +94,12 @@ class ServiceRegistrationAdmin(MyBaseModelAdmin):
     list_filter = ("status", "service__id", "payment")
 
     def save_model(self, request, obj, form, change):
+        send_notification(
+            obj=obj,
+            approved_entity=EntityType.SERVICE_APPROVED,
+            rejected_entity=EntityType.SERVICE_REJECTED,
+            filters={"resident_id": obj.resident.resident_id},
+        )
         super().save_model(request, obj, form, change)
         if (
             obj.is_approved
@@ -112,6 +134,16 @@ class ReissueCardAdmin(MyBaseModelAdmin):
     )
     exclude = ("deleted",)
     list_filter = ("status",)
+
+    # TODO: Do this
+    def save_model(self, request, obj, form, change):
+        send_notification(
+            obj=obj,
+            approved_entity=EntityType.REISSUE_APPROVED,
+            rejected_entity=EntityType.REISSUE_REJECTED,
+            filters={"resident_id": obj.service_registration.resident.resident_id},
+        )
+        super().save_model(request, obj, form, change)
 
     def has_add_permission(self, request, obj=None):
         return False

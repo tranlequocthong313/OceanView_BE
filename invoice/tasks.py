@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 
 from invoice.models import Invoice, InvoiceDetail
-from service.models import ServiceRegistration
+from service.models import MyBaseServiceStatus, ServiceRegistration
 
 
 def calculate_units_used(registration):
@@ -10,7 +10,7 @@ def calculate_units_used(registration):
     return (today - created_datetime).days + 1
 
 
-def create_invoices(payment=ServiceRegistration.Payment.MONTHLY):
+def create_invoices(payment=MyBaseServiceStatus.Payment.MONTHLY):
     now = datetime.now()
     if payment == ServiceRegistration.Payment.MONTHLY:
         first_day_of_period = now.replace(
@@ -26,7 +26,7 @@ def create_invoices(payment=ServiceRegistration.Payment.MONTHLY):
         due_date = now + timedelta(days=7)
 
     service_registrations = ServiceRegistration.objects.filter(
-        status=ServiceRegistration.Status.APPROVED,
+        status=MyBaseServiceStatus.Status.APPROVED,
         created_date__gte=first_day_of_period,
         created_date__lte=last_day_of_period,
         payment=payment,
