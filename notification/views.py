@@ -9,6 +9,7 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ViewSet
 
 from firebase import topic
+from notification.types import MessageTarget
 from user.permissions import NonAccessTokenPermissionMixin
 from utils import get_logger
 
@@ -60,21 +61,37 @@ class NotificationView(NonAccessTokenPermissionMixin, ListAPIView, ViewSet):
     permission_classes = [IsAuthenticated]
     serializer_class = serializers.ClientNotificationSerializer
 
+    @property
+    def for_admin(self):
+        return self.request.GET.get("source") == "admin"
+
+    def get_permissions(self):
+        return super().get_permissions()
+
     def get_queryset(self):
-        return (
-            models.Notification.objects.filter(recipient=self.request.user)
-            .order_by("-id")
-            .all()
-        )
+        queryset = models.Notification.objects.filter(
+            recipient=self.request.user
+        ).order_by("-id")
+        if self.for_admin:
+            queryset = queryset.filter(target=MessageTarget.ADMIN)
+        else:
+            queryset = queryset.exclude(target=MessageTarget.ADMIN)
+        return queryset
 
     def get_serializer_class(self):
-        if self.request.GET.get("source") == "admin":
+        if self.for_admin:
             return serializers.AdminNotificationSerializer
         return super().get_serializer_class()
 
     def list(self, request, *args, **kwargs):
+        if self.for_admin and not request.user.is_staff:
+            return Response("You do not have permission", status.HTTP_403_FORBIDDEN)
         response = super().list(request, *args, **kwargs)
-        response.data["badge"] = request.user.number_of_unread_notifications
+        response.data["badge"] = (
+            request.user.staff_unread_notifications
+            if self.for_admin
+            else request.user.unread_notifications
+        )
         return response
 
     @extend_schema(**swaggers.NOTIFICATION_READ)

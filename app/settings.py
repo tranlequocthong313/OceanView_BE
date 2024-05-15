@@ -59,8 +59,6 @@ INSTALLED_APPS = [
     "drf_spectacular_sidecar",
     "oauth2_provider",
     "corsheaders",
-    "ckeditor",
-    "ckeditor_uploader",
     "django_ckeditor_5",
     "vnpay",
     "django_crontab",
@@ -100,8 +98,6 @@ customColorPalette = [
     {"color": "hsl(207, 90%, 54%)", "label": "Blue"},
 ]
 
-CKEDITOR_UPLOAD_PATH = "ckeditors/uploads/"
-CKEDITOR_RESTRICT_BY_USER = True
 CKEDITOR_5_CONFIGS = {
     "default": {
         "toolbar": [

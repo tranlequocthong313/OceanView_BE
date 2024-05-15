@@ -42,7 +42,8 @@ class UserSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         rep = super().to_representation(instance)
         rep["avatar"] = instance.avatar_url
-
+        if not rep["is_staff"]:
+            del rep["staff_unread_notifications"]
         return rep
 
     class Meta:
@@ -58,7 +59,8 @@ class UserSerializer(serializers.ModelSerializer):
             "status",
             "issued_by",
             "locker",
-            "number_of_unread_notifications",
+            "unread_notifications",
+            "staff_unread_notifications",
         )
         extra_kwargs = {"password": {"write_only": "true"}}
 

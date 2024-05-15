@@ -88,20 +88,12 @@ class MyBaseServiceStatus(MyBaseModelWithDeletedState):
         choices=Status,
         default=Status.WAITING_FOR_APPROVAL,
     )
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.__prev_status = self.status
+    __prev_status = None
 
     @property
     def status_changed(self):
+        print(self.__prev_status, self.status)
         return self.__prev_status != self.status
-
-    def save(
-        self, force_insert=False, force_update=False, using=None, update_fields=None
-    ):
-        super().save(force_insert, force_update, using, update_fields)
-        self.__prev_status = self.status
 
     def cancel(self):
         self.status = MyBaseServiceStatus.Status.CANCELED
@@ -113,8 +105,24 @@ class MyBaseServiceStatus(MyBaseModelWithDeletedState):
         return self.status == MyBaseServiceStatus.Status.APPROVED
 
     @property
+    def is_rejected(self):
+        return self.status == MyBaseServiceStatus.Status.REJECTED
+
+    @property
     def is_canceled(self):
         return self.status == MyBaseServiceStatus.Status.CANCELED
+
+    def approve(self):
+        self.__prev_status = self.status
+        self.status = MyBaseServiceStatus.Status.APPROVED
+        self.save()
+        return True
+
+    def reject(self):
+        self.__prev_status = self.status
+        self.status = MyBaseServiceStatus.Status.REJECTED
+        self.save()
+        return True
 
     class Meta:
         abstract = True
@@ -152,6 +160,19 @@ class ServiceRegistration(MyBaseServiceStatus):
         choices=Payment.choices,
         max_length=20,
         default=Payment.MONTHLY,
+    )
+
+    class Status(models.TextChoices):
+        WAITING_FOR_APPROVAL = "WAITING_FOR_APPROVAL", _("Chờ được xét duyệt")
+        APPROVED = "APPROVED", _("Đã được duyệt")
+        REJECTED = "REJECTED", _("Bị từ chối")
+        CANCELED = "CANCELED", _("Đã hủy")
+
+    status = models.CharField(
+        _("Trạng thái"),
+        max_length=30,
+        choices=Status,
+        default=Status.WAITING_FOR_APPROVAL,
     )
 
     class Meta:

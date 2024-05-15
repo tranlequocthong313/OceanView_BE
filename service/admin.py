@@ -1,7 +1,7 @@
 from typing import Any
 
-from django.contrib import admin
-from django.http import HttpRequest
+from django.contrib import admin, messages
+from django.http import HttpRequest, HttpResponseRedirect
 from django.utils.translation import gettext_lazy as _
 
 from app import settings
@@ -9,6 +9,7 @@ from app.admin import MyBaseModelAdmin, admin_site
 from notification.manager import NotificationManager
 from notification.types import EntityType
 from user.admin import issue_account
+from utils import get_logger
 
 from .models import (
     MyBaseServiceStatus,
@@ -18,6 +19,8 @@ from .models import (
     ServiceRegistration,
     Vehicle,
 )
+
+log = get_logger(__name__)
 
 
 class RelativeAdmin(MyBaseModelAdmin):
@@ -33,9 +36,6 @@ class RelativeAdmin(MyBaseModelAdmin):
 
     def has_add_permission(self, request, obj=None):
         return False
-
-
-admin.site.register(Relative, RelativeAdmin)
 
 
 class ServiceAdmin(MyBaseModelAdmin):
@@ -56,6 +56,62 @@ class ServiceAdmin(MyBaseModelAdmin):
     list_filter = ("id",)
 
 
+class MyBaseServiceStatusAmin(MyBaseModelAdmin):
+    def post_save(self, instance):
+        return instance
+
+    def approve(self, request, instance):
+        if instance.is_approved:
+            log.error("Faild to approve service registration")
+            messages.add_message(
+                request,
+                messages.ERROR,
+                "Approve failed. Service registration has been approved already",
+            )
+            return False
+        else:
+            success = instance.approve()
+            if success:
+                messages.add_message(
+                    request,
+                    messages.SUCCESS,
+                    "Approved service registration successfully",
+                )
+                log.info("Service registration is approved")
+            self.post_save(instance)
+            return success
+
+    def reject(self, request, instance):
+        if instance.is_rejected:
+            log.error("Faild to reject service registration")
+            messages.add_message(
+                request,
+                messages.ERROR,
+                "Reject failed. Service registration has been rejected already",
+            )
+            return False
+        else:
+            success = instance.reject()
+            if success:
+                messages.add_message(
+                    request,
+                    messages.SUCCESS,
+                    "Rejected service registration successfully",
+                )
+                log.info("Service registration is rejected")
+            self.post_save(instance)
+            return success
+
+    def response_change(self, request, obj):
+        if "_approve-service-registration" in request.POST:
+            self.approve(request, obj)
+            return HttpResponseRedirect(".")
+        if "_reject-service-registration" in request.POST:
+            self.reject(request, obj)
+            return HttpResponseRedirect(".")
+        return super().response_change(request, obj)
+
+
 def send_notification(obj, approved_entity, rejected_entity, filters):
     if obj.status_changed and obj.status in [
         MyBaseServiceStatus.Status.APPROVED,
@@ -69,7 +125,7 @@ def send_notification(obj, approved_entity, rejected_entity, filters):
         )
 
 
-class ServiceRegistrationAdmin(MyBaseModelAdmin):
+class ServiceRegistrationAdmin(MyBaseServiceStatusAmin):
     list_display = (
         "id",
         "service",
@@ -90,23 +146,42 @@ class ServiceRegistrationAdmin(MyBaseModelAdmin):
         "status",
         "payment",
     )
+    fields = (
+        "service",
+        "personal_information",
+        "resident",
+        "apartment",
+        "payment",
+        "status",
+    )
     exclude = ("deleted",)
     list_filter = ("status", "service__id", "payment")
+    change_form_template = "admin/service_registration_change_form.html"
+    readonly_fields = (
+        "service",
+        "personal_information",
+        "resident",
+        "apartment",
+        "status",
+    )
 
-    def save_model(self, request, obj, form, change):
+    def approve(self, request, instance):
+        success = super().approve(request, instance)
+        if not success:
+            return
+        if instance.service.id == Service.ServiceType.RESIDENT_CARD and issue_account(
+            request, instance.personal_information
+        ):
+            instance.personal_information.user.apartment_set.add(instance.apartment_id)
+
+    def post_save(self, instance):
         send_notification(
-            obj=obj,
+            instance,
             approved_entity=EntityType.SERVICE_APPROVED,
             rejected_entity=EntityType.SERVICE_REJECTED,
-            filters={"resident_id": obj.resident.resident_id},
+            filters={"resident_id": instance.resident.resident_id},
         )
-        super().save_model(request, obj, form, change)
-        if (
-            obj.is_approved
-            and obj.service.id == Service.ServiceType.RESIDENT_CARD
-            and issue_account(request, obj.personal_information)
-        ):
-            obj.personal_information.user.apartment_set.add(obj.apartment_id)
+        return super().post_save(instance)
 
     def has_add_permission(self, request, obj=None):
         return False
@@ -117,7 +192,10 @@ class ServiceRegistrationAdmin(MyBaseModelAdmin):
         return False
 
 
-class ReissueCardAdmin(MyBaseModelAdmin):
+class ReissueCardAdmin(MyBaseServiceStatusAmin):
+    approved_entity = EntityType.REISSUE_APPROVED
+    rejected_entity = EntityType.REISSUE_REJECTED
+
     list_display = (
         "id",
         "service_registration",
@@ -134,16 +212,17 @@ class ReissueCardAdmin(MyBaseModelAdmin):
     )
     exclude = ("deleted",)
     list_filter = ("status",)
+    readonly_fields = ("service_registration", "status")
+    change_form_template = "admin/service_registration_change_form.html"
 
-    # TODO: Do this
-    def save_model(self, request, obj, form, change):
+    def post_save(self, instance):
         send_notification(
-            obj=obj,
+            instance,
             approved_entity=EntityType.REISSUE_APPROVED,
             rejected_entity=EntityType.REISSUE_REJECTED,
-            filters={"resident_id": obj.service_registration.resident.resident_id},
+            filters={"resident_id": instance.service_registration.resident.resident_id},
         )
-        super().save_model(request, obj, form, change)
+        return super().post_save(instance)
 
     def has_add_permission(self, request, obj=None):
         return False
@@ -175,3 +254,4 @@ admin_site.register(Vehicle, VehicleAdmin)
 admin_site.register(Service, ServiceAdmin)
 admin_site.register(ServiceRegistration, ServiceRegistrationAdmin)
 admin_site.register(ReissueCard, ReissueCardAdmin)
+admin.site.register(Relative, RelativeAdmin)
