@@ -93,6 +93,7 @@ class InvoiceView(ListAPIView, RetrieveAPIView, ViewSet):
             "Created proof image payment successfully", status=status.HTTP_201_CREATED
         )
 
+    # TODO: Return error more detail
     @extend_schema(**swaggers.INVOICE_ONLINE_WALLET_PAYMENT)
     @action(
         methods=["POST"],
@@ -189,6 +190,8 @@ class InvoiceView(ListAPIView, RetrieveAPIView, ViewSet):
         log.info("Paid online wallet payment successfully")
         return Response("Paid successfully", status.HTTP_200_OK)
 
+    # TODO: Handle when users exit the transaction before finishing
+    # TODO: Return error more detail
     @extend_schema(**swaggers.INVOICE_ONLINE_WALLET_PAYMENT)
     @action(
         methods=["POST"],
