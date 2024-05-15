@@ -25,7 +25,7 @@ class ItemSerializer(serializers.ModelSerializer):
         NotificationManager.create_notification(
             entity=instance,
             entity_type=EntityType.LOCKER_ITEM_ADD,
-            filters={"resident_id", instance.locker.owner.resident_id},
+            filters={"resident_id": instance.locker.owner.resident_id},
             image=settings.LOGO,
         )
         return instance
