@@ -141,6 +141,7 @@ class VnPayBillingAdmin(BillingAdmin, MyBaseModelAdmin):
     )
 
 
+# TODO: Implement pick date
 class StatsRevenueAdmin(admin.ModelAdmin):
     change_list_template = "admin/stats/revenue_change_list.html"
 

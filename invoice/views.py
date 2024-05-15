@@ -31,10 +31,17 @@ class InvoiceView(ListAPIView, RetrieveAPIView, ViewSet):
 
     def get_queryset(self):
         queries = Invoice.objects.filter(deleted=False)
-
         if q := self.request.query_params.get("q"):
             queries = queries.filter(id__icontains=q)
-
+        if status := self.request.query_params.get("status"):
+            queries = queries.filter(status=status)
+        if _status := self.request.query_params.get("_status"):
+            queries = queries.exclude(status=_status)
+        if category := self.request.query_params.get("category"):
+            category = [item.strip() for item in category.split(",")]
+            queries = queries.filter(
+                invoicedetail__service_registration__service__id__in=category
+            )
         return queries
 
     @extend_schema(**swaggers.INVOICE_LIST)

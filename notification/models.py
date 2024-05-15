@@ -2,9 +2,8 @@ from django.core.validators import MinLengthValidator
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
-from app import settings
 from app.models import MyBaseModel
-from notification.types import EntityType
+from notification.types import EntityType, MessageTarget
 from user.models import User
 
 
@@ -76,6 +75,12 @@ class Notification(MyBaseModel):
         db_index=True,
     )
     has_been_read = models.BooleanField(verbose_name=_("Đã đọc"), default=False)
+    target = models.CharField(
+        verbose_name=_("Đối tượng"),
+        choices=MessageTarget.choices,
+        max_length=50,
+        default=MessageTarget.ADMIN,
+    )
 
     class Meta:
         verbose_name = _("Thông báo")
@@ -85,13 +90,22 @@ class Notification(MyBaseModel):
         is_new = not self.pk
         super().save(*args, **kwargs)
         if is_new:
-            self.recipient.number_of_unread_notifications += 1
+            if self.target == MessageTarget.ADMIN:
+                self.recipient.staff_unread_notifications += 1
+            else:
+                self.recipient.unread_notifications += 1
             self.recipient.save()
 
     def read(self):
         self.has_been_read = True
-        if self.recipient.number_of_unread_notifications > 0:
-            self.recipient.number_of_unread_notifications -= 1
+        if (
+            self.recipient.unread_notifications > 0
+            or self.recipient.staff_unread_notifications > 0
+        ):
+            if self.target == MessageTarget.ADMIN:
+                self.recipient.staff_unread_notifications -= 1
+            else:
+                self.recipient.unread_notifications -= 1
             self.recipient.save()
         self.save()
         return True

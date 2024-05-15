@@ -36,5 +36,4 @@ urlpatterns = [
     ),
     path("swagger/download/", SpectacularAPIView.as_view(), name="schema"),
     path("ckeditor5/", include("django_ckeditor_5.urls")),
-    path("ckeditor/", include("ckeditor_uploader.urls")),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

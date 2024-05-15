@@ -25,17 +25,11 @@ def get_users_by_target(target=None, filters=None):
         filters = {}
     users = []
     if target == MessageTarget.ADMIN:
-        users = User.objects.filter(
-            is_staff=True, fcmtoken__device_type=FCMToken.DeviceType.WEB, **filters
-        ).distinct()
+        users = User.objects.filter(is_staff=True, **filters).distinct()
     elif target in [MessageTarget.RESIDENTS, MessageTarget.RESIDENT]:
-        users = User.objects.filter(
-            fcmtoken__device_type=FCMToken.DeviceType.ANDROID, **filters
-        ).distinct()
+        users = User.objects.filter(**filters).distinct()
     elif target == MessageTarget.ALL:
-        users = User.objects.filter(
-            fcmtoken__device_type__isnull=False, **filters
-        ).distinct()
+        users = User.objects.filter(**filters).distinct()
     return users
 
 
@@ -59,9 +53,17 @@ class NotificationManager:
             image=image,
         )
         NotificationSender.objects.create(sender=sender, content=content)
-        for user in get_users_by_target(target=target, filters=filters):
-            Notification.objects.create(recipient=user, content=content)
+        users = get_users_by_target(target=target, filters=filters)
+        for user in users:
+            Notification.objects.create(recipient=user, content=content, target=target)
+        tokens = None
+        if len(users) > 0 and target == MessageTarget.RESIDENT:
+            tokens = FCMToken.objects.filter(
+                user=users[0], device_type=FCMToken.DeviceType.ANDROID
+            ).all()
         message.send_notification(
+            tokens=tokens,
+            target=target,
             title=ACTION_MESSAGE_MAPPING[entity_type](
                 entity=entity, action=content.get_entity_type_display().lower()
             ),

@@ -1,0 +1,13 @@
+{% extends 'admin/change_form.html' %} 
+{% block submit_buttons_bottom %}
+    {% if original.is_approved %}
+        <div class="submit-row">
+            <input type="submit" value="Từ chối đăng ký" style='background-color: #ba2121;' name="_reject-service-registration" />
+        </div>
+    {% else %}
+        <div class="submit-row">
+            <input type="submit" value="Xét duyệt đăng ký" style='background-color: green' name="_approve-service-registration" />
+        </div>
+    {% endif %}
+    {{ block.super }}
+{% endblock %}

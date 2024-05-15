@@ -3,6 +3,7 @@ from drf_spectacular.utils import OpenApiExample, OpenApiParameter
 
 from invoice.models import Invoice
 from invoice.serializers import InvoiceSerializer
+from service.models import Service
 from utils import format
 
 INVOICE_LIST = {
@@ -17,6 +18,39 @@ INVOICE_LIST = {
             description="Search invoices",
             examples=[
                 OpenApiExample("Example", value="INV064393"),
+            ],
+        ),
+        OpenApiParameter(
+            name="status",
+            type=OpenApiTypes.STR,
+            location=OpenApiParameter.QUERY,
+            description="Include invoice status",
+            examples=[
+                OpenApiExample(
+                    "Example", value=format.format_enum_values(Invoice.InvoiceStatus)
+                ),
+            ],
+        ),
+        OpenApiParameter(
+            name="_status",
+            type=OpenApiTypes.STR,
+            location=OpenApiParameter.QUERY,
+            description="Exclude invoice status",
+            examples=[
+                OpenApiExample(
+                    "Example", value=format.format_enum_values(Invoice.InvoiceStatus)
+                ),
+            ],
+        ),
+        OpenApiParameter(
+            name="category",
+            type=OpenApiTypes.STR,
+            location=OpenApiParameter.QUERY,
+            description="Category service",
+            examples=[
+                OpenApiExample(
+                    "Example", value=format.format_enum_values(Service.ServiceType)
+                ),
             ],
         ),
     ],

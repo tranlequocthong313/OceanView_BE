@@ -57,6 +57,7 @@ class FeedbackAdmin(admin.ModelAdmin):
         return mark_safe(f'<img width="500" src="{obj.image_url}" />')
 
 
+# TODO: Implement pick date
 class StatsFeedbackAdmin(admin.ModelAdmin):
     change_list_template = "admin/stats/feedback_change_list.html"
 

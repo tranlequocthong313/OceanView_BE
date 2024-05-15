@@ -115,8 +115,11 @@ class User(AbstractBaseUser, PermissionsMixin):
         null=True,
         blank=True,
     )
-    number_of_unread_notifications = models.PositiveBigIntegerField(
+    unread_notifications = models.PositiveBigIntegerField(
         verbose_name=_("Thông báo chưa đọc"), default=0
+    )
+    staff_unread_notifications = models.PositiveBigIntegerField(
+        verbose_name=_("Thông báo chưa đọc admin"), default=0
     )
 
     USERNAME_FIELD = "resident_id"

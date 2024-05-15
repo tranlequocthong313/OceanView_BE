@@ -120,7 +120,7 @@ class MyUserAdmin(MyBaseModelAdmin):
         "personal_information__phone_number",
     )
     list_filter = ("is_staff", "is_superuser", "issued_by")
-    actions = ["ban_users"]
+    actions = ["ban_users", "unban_users"]
 
     change_form_template = "admin/user_change_form.html"
 
