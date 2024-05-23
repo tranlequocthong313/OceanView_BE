@@ -10,7 +10,7 @@ from . import models
 
 class PersonalInformationSerializer(serializers.ModelSerializer):
     citizen_id = serializers.CharField(required=True)
-    email = serializers.EmailField()
+    email = serializers.EmailField(required=False)
     phone_number = serializers.CharField(required=True)
 
     def to_representation(self, instance):

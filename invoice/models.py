@@ -11,6 +11,7 @@ from app.models import MyBaseModel, MyBaseModelWithDeletedState
 from service.models import ServiceRegistration
 
 
+# TODO: add invoice status waiting for approval when pay with proof image
 class Invoice(MyBaseModelWithDeletedState):
     class InvoiceStatus(models.TextChoices):
         PENDING = "PENDING", _("Chờ thanh toán")
