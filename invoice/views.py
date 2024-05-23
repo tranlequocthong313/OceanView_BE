@@ -93,7 +93,6 @@ class InvoiceView(ListAPIView, RetrieveAPIView, ViewSet):
             "Created proof image payment successfully", status=status.HTTP_201_CREATED
         )
 
-    # TODO: Return error more detail
     @extend_schema(**swaggers.INVOICE_ONLINE_WALLET_PAYMENT)
     @action(
         methods=["POST"],
@@ -115,7 +114,7 @@ class InvoiceView(ListAPIView, RetrieveAPIView, ViewSet):
         if not r.ok or "payment_url" not in r.json():
             log.error(f"Vnpay payment failed:::{r.json()}")
             return Response(
-                "Vnpay server error", status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                "Internal server error", status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
         payment_url = r.json()["payment_url"]
@@ -126,9 +125,7 @@ class InvoiceView(ListAPIView, RetrieveAPIView, ViewSet):
         ).first()
         if not vnpay_billing:
             log.error(f"Vnpay payment failed, not found vnpay billing:::{r.json()}")
-            return Response(
-                "Vnpay server error", status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
+            return Response("Not found transaction", status=status.HTTP_404_NOT_FOUND)
 
         payment = Payment.objects.create(
             method=Payment.PaymentMethod.ONLINE_WALLET,
@@ -164,7 +161,7 @@ class InvoiceView(ListAPIView, RetrieveAPIView, ViewSet):
         ):
             log.error(f"Vnpay payment failed:::{r.json()}")
             return Response(
-                "Vnpay server error", status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                "Transaction is not success", status=status.HTTP_400_BAD_REQUEST
             )
 
         parsed_url = urlparse(request.get_full_path())
@@ -175,9 +172,7 @@ class InvoiceView(ListAPIView, RetrieveAPIView, ViewSet):
         ).first()
         if not online_wallet:
             log.error(f"Vnpay payment failed, not found vnpay billing:::{r.json()}")
-            return Response(
-                "Vnpay server error", status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
+            return Response("Not found transaction", status=status.HTTP_404_NOT_FOUND)
         paid = online_wallet.pay()
         if not paid:
             log.error(
@@ -191,7 +186,6 @@ class InvoiceView(ListAPIView, RetrieveAPIView, ViewSet):
         return Response("Paid successfully", status.HTTP_200_OK)
 
     # TODO: Handle when users exit the transaction before finishing
-    # TODO: Return error more detail
     @extend_schema(**swaggers.INVOICE_ONLINE_WALLET_PAYMENT)
     @action(
         methods=["POST"],
@@ -205,13 +199,13 @@ class InvoiceView(ListAPIView, RetrieveAPIView, ViewSet):
         if not r.ok:
             log.error(f"Momo payment failed:::{r.json()}")
             return Response(
-                "Momo server error", status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                "Internal server error", status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
         data = r.json()
         if data["resultCode"] != self.MOMO_SUCCESS_CODE:
             log.error(f"Momo payment failed:::{r.json()}")
             return Response(
-                "Momo server error", status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                "Transaction is not success", status=status.HTTP_400_BAD_REQUEST
             )
         payment = Payment.objects.create(
             method=Payment.PaymentMethod.ONLINE_WALLET,
@@ -249,7 +243,7 @@ class InvoiceView(ListAPIView, RetrieveAPIView, ViewSet):
         ):
             log.error(f"Momo payment failed:::{request.data}")
             return Response(
-                "Momo server error", status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                "Transaction is not success", status=status.HTTP_400_BAD_REQUEST
             )
         online_wallet = OnlineWallet.objects.filter(
             reference_number=request.data["requestId"]
@@ -258,13 +252,11 @@ class InvoiceView(ListAPIView, RetrieveAPIView, ViewSet):
             log.error(
                 f"Momo payment failed, not found momo transaction:::{request.data}"
             )
-            return Response(
-                "Momo server error", status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
+            return Response("Not found transaction", status=status.HTTP_404_NOT_FOUND)
         if online_wallet.payment.total_amount != int(request.data["amount"]):
             log.error(f"Momo payment failed, amounts are not matching:::{request.data}")
             return Response(
-                "Momo server error", status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                "Redirected data is invalid", status=status.HTTP_400_BAD_REQUEST
             )
         paid = online_wallet.pay(transaction_id=request.data["transId"])
         if not paid:
@@ -289,9 +281,7 @@ class InvoiceView(ListAPIView, RetrieveAPIView, ViewSet):
             self.MOMO_SUCCESS_CODE
         ):
             log.error("Momo payment failed")
-            return Response(
-                "Momo server error", status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
+            return Response("Bad request", status=status.HTTP_400_BAD_REQUEST)
         online_wallet = OnlineWallet.objects.filter(
             reference_number=request.GET.get("requestId")
         ).first()
@@ -299,13 +289,12 @@ class InvoiceView(ListAPIView, RetrieveAPIView, ViewSet):
             log.error(
                 f"Momo payment failed, not found momo transaction:::{request.GET}"
             )
-            return Response(
-                "Momo server error", status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
+            return Response("Not found transaction", status=status.HTTP_400_BAD_REQUEST)
         if online_wallet.payment.total_amount != int(request.GET.get("amount")):
             log.error(f"Momo payment failed, amounts are not matching:::{request.GET}")
             return Response(
-                "Momo server error", status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                "Redirected data is invalid",
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
         log.info("Redirect paid online wallet payment successfully")
         return Response("Paid with Momo successfully", status.HTTP_200_OK)
