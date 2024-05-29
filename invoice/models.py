@@ -159,6 +159,10 @@ class ProofImage(MyBaseModelWithDeletedState):
     def is_rejected(self):
         return self.status == ProofImage.Status.REJECTED
 
+    @property
+    def is_waiting_for_approval(self):
+        return self.status == ProofImage.Status.WAITING_FOR_APPROVAL
+
     def approve(self):
         self.status = ProofImage.Status.APPROVED
         self.payment.pay()

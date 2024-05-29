@@ -82,11 +82,11 @@ CRONJOBS = [
     #     "* * * * *",
     #     "invoice.tasks.create_invoices",
     #     ["DAILY"],
-    # ),  # NOTE: FOR DEV AND DEMO PURPOSE
+    # ),  # NOTE: every minute FOR DEV AND DEMO PURPOSE
     # (
     #     "* * * * *",
     #     "invoice.tasks.create_invoices",
-    # ),  # NOTE: FOR DEV AND DEMO PURPOSE
+    # ),  # NOTE: every minute FOR DEV AND DEMO PURPOSE
 ]
 
 customColorPalette = [

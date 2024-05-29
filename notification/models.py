@@ -97,6 +97,8 @@ class Notification(MyBaseModel):
             self.recipient.save()
 
     def read(self):
+        if self.has_been_read:
+            return False
         self.has_been_read = True
         if (
             self.recipient.unread_notifications > 0

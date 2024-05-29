@@ -1,6 +1,6 @@
 {% extends 'admin/change_form.html' %} 
 {% block submit_buttons_bottom %}
-    {% if not original.is_approved and not original.is_rejected %}
+    {% if original.is_waiting_for_approval %}
         <div class="submit-row">
             <input type="submit" value="Từ chối" style='background-color: #ba2121;' name="_reject-proof-image" />
             <input type="submit" value="Xét duyệt" style='background-color: green' name="_approve-proof-image" />

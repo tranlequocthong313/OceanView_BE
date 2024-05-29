@@ -82,6 +82,14 @@ class MyBaseServiceStatus(MyBaseModelWithDeletedState):
         REJECTED = "REJECTED", _("Bị từ chối")
         CANCELED = "CANCELED", _("Đã hủy")
 
+    previous_status = models.CharField(
+        _("Trạng thái trước"),
+        max_length=30,
+        choices=Status,
+        default=None,
+        null=True,
+        blank=True,
+    )
     status = models.CharField(
         _("Trạng thái"),
         max_length=30,
@@ -93,11 +101,6 @@ class MyBaseServiceStatus(MyBaseModelWithDeletedState):
     @property
     def status_changed(self):
         return self.__prev_status != self.status
-
-    def cancel(self):
-        self.status = MyBaseServiceStatus.Status.CANCELED
-        self.save()
-        return True
 
     @property
     def is_approved(self):
@@ -111,15 +114,28 @@ class MyBaseServiceStatus(MyBaseModelWithDeletedState):
     def is_canceled(self):
         return self.status == MyBaseServiceStatus.Status.CANCELED
 
+    @property
+    def is_waiting_for_approval(self):
+        return self.status == MyBaseServiceStatus.Status.WAITING_FOR_APPROVAL
+
     def approve(self):
+        self.previous_status = self.status
         self.__prev_status = self.status
         self.status = MyBaseServiceStatus.Status.APPROVED
         self.save()
         return True
 
     def reject(self):
+        self.previous_status = self.status
         self.__prev_status = self.status
         self.status = MyBaseServiceStatus.Status.REJECTED
+        self.save()
+        return True
+
+    def cancel(self):
+        self.previous_status = self.status
+        self.__prev_status = self.status
+        self.status = MyBaseServiceStatus.Status.CANCELED
         self.save()
         return True
 
@@ -159,19 +175,6 @@ class ServiceRegistration(MyBaseServiceStatus):
         choices=Payment.choices,
         max_length=20,
         default=Payment.MONTHLY,
-    )
-
-    class Status(models.TextChoices):
-        WAITING_FOR_APPROVAL = "WAITING_FOR_APPROVAL", _("Chờ được xét duyệt")
-        APPROVED = "APPROVED", _("Đã được duyệt")
-        REJECTED = "REJECTED", _("Bị từ chối")
-        CANCELED = "CANCELED", _("Đã hủy")
-
-    status = models.CharField(
-        _("Trạng thái"),
-        max_length=30,
-        choices=Status,
-        default=Status.WAITING_FOR_APPROVAL,
     )
 
     class Meta:

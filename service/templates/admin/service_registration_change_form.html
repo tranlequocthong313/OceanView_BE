@@ -1,6 +1,6 @@
 {% extends 'admin/change_form.html' %} 
 {% block submit_buttons_bottom %}
-    {% if not original.is_approved and not original.is_rejected %}
+    {% if original.is_waiting_for_approval %}
         <div class="submit-row">
             <input type="submit" value="Từ chối đăng ký" style='background-color: #ba2121;' name="_reject-service-registration" />
             <input type="submit" value="Xét duyệt đăng ký" style='background-color: green' name="_approve-service-registration" />

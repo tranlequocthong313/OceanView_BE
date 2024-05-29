@@ -94,6 +94,8 @@ class NotificationView(NonAccessTokenPermissionMixin, ListAPIView, ViewSet):
         )
         return response
 
+    # NOTE: There is a bug on my Firefox, if you can't set read state for the notification
+    # then try it on Chrome or some other browers
     @extend_schema(**swaggers.NOTIFICATION_READ)
     @action(
         detail=False,
@@ -103,8 +105,19 @@ class NotificationView(NonAccessTokenPermissionMixin, ListAPIView, ViewSet):
     def read(self, request):
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
-        self.get_queryset().filter(
-            content_id=serializer.validated_data["content_id"]
-        ).first().read()
-        log.info(f"{request.user} read notification successfully")
-        return Response("Read successfully", status.HTTP_201_CREATED)
+        if (
+            self.get_queryset()
+            .filter(content_id=serializer.validated_data["content_id"])
+            .first()
+            .read()
+        ):
+            log.info(f"{request.user} read notification successfully")
+            return Response("Read successfully", status.HTTP_201_CREATED)
+        else:
+            log.info(
+                f"{request.user} read notification failed. This notification has been read already"
+            )
+            return Response(
+                "Read failed. This notification has been read already",
+                status.HTTP_201_CREATED,
+            )

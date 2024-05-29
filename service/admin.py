@@ -1,6 +1,6 @@
 from typing import Any
 
-from django.contrib import admin, messages
+from django.contrib import messages
 from django.http import HttpRequest, HttpResponseRedirect
 from django.utils.translation import gettext_lazy as _
 
@@ -63,11 +63,11 @@ class MyBaseServiceStatusAmin(MyBaseModelAdmin):
 
     def approve(self, request, instance):
         if instance.is_approved:
-            log.error("Faild to approve service registration")
+            log.error("Faild to approve")
             messages.add_message(
                 request,
                 messages.ERROR,
-                "Approve failed. Service registration has been approved already",
+                "Approve failed. It has been approved already",
             )
             return False
         else:
@@ -76,9 +76,9 @@ class MyBaseServiceStatusAmin(MyBaseModelAdmin):
                 messages.add_message(
                     request,
                     messages.SUCCESS,
-                    "Approved service registration successfully",
+                    "Approved successfully",
                 )
-                log.info("Service registration is approved")
+                log.info("It is approved")
             self.post_save(instance)
             return success
 
@@ -88,7 +88,7 @@ class MyBaseServiceStatusAmin(MyBaseModelAdmin):
             messages.add_message(
                 request,
                 messages.ERROR,
-                "Reject failed. Service registration has been rejected already",
+                "Reject failed. It has been rejected already",
             )
             return False
         else:
@@ -97,9 +97,9 @@ class MyBaseServiceStatusAmin(MyBaseModelAdmin):
                 messages.add_message(
                     request,
                     messages.SUCCESS,
-                    "Rejected service registration successfully",
+                    "Rejected successfully",
                 )
-                log.info("Service registration is rejected")
+                log.info("It is rejected")
             self.post_save(instance)
             return success
 
@@ -135,6 +135,7 @@ class ServiceRegistrationAdmin(MyBaseServiceStatusAmin):
         "apartment",
         "payment",
         "status",
+        "previous_status",
     )
     search_fields = (
         "id",
@@ -173,6 +174,10 @@ class ServiceRegistrationAdmin(MyBaseServiceStatusAmin):
             request, instance.personal_information
         ):
             instance.personal_information.user.apartment_set.add(instance.apartment_id)
+
+    def reject(self, request, instance):
+        if super().reject(request, instance) and instance.has_vehicle:
+            instance.vehicle.delete()
 
     def post_save(self, instance):
         send_notification(
@@ -254,4 +259,3 @@ admin_site.register(Vehicle, VehicleAdmin)
 admin_site.register(Service, ServiceAdmin)
 admin_site.register(ServiceRegistration, ServiceRegistrationAdmin)
 admin_site.register(ReissueCard, ReissueCardAdmin)
-admin.site.register(Relative, RelativeAdmin)
