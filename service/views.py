@@ -19,7 +19,14 @@ from user.permissions import IsOwner
 from utils import get_logger
 
 from . import serializers, swaggers
-from .models import ReissueCard, Relative, Service, ServiceRegistration, Vehicle
+from .models import (
+    MyBaseServiceStatus,
+    ReissueCard,
+    Relative,
+    Service,
+    ServiceRegistration,
+    Vehicle,
+)
 
 log = get_logger(__name__)
 
@@ -28,12 +35,13 @@ log = get_logger(__name__)
 class ServiceRegistrationView(DestroyAPIView, ReadOnlyModelViewSet):
     serializer_class = serializers.AccessCardServiceRegistrationSerializer
     permission_classes = [IsAuthenticated]
-    # NOTE: Save the policy on the number of vehicles for each apartment in the database with a separate model
+    # NOTE: Able to save the policy on the number of vehicles for each apartment in the database with a separate model
     max_vehicle_counts = {
         Vehicle.VehicleType.BICYCLE: 2,
         Vehicle.VehicleType.MOTORBIKE: 2,
         Vehicle.VehicleType.CAR: 1,
     }
+    MAXIMUM_RESIDENT_CARDS_PER_APARTMENT = 4
 
     def get_queryset(self):
         queryset = ServiceRegistration.objects.filter(
@@ -64,7 +72,12 @@ class ServiceRegistrationView(DestroyAPIView, ReadOnlyModelViewSet):
 
     def registered_service(self, service_id, personal_information):
         return ServiceRegistration.objects.filter(
-            service_id=service_id, personal_information=personal_information
+            service_id=service_id,
+            personal_information=personal_information,
+            status__in=[
+                MyBaseServiceStatus.Status.WAITING_FOR_APPROVAL,
+                MyBaseServiceStatus.Status.APPROVED,
+            ],
         ).exists()
 
     def get_serializer_class(self):
@@ -86,9 +99,17 @@ class ServiceRegistrationView(DestroyAPIView, ReadOnlyModelViewSet):
                 "This service has been canceled already",
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        instance.cancel()
-        log.info(f"{instance} is canceled successfully")
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        elif instance.is_approved or instance.is_waiting_for_approval:
+            instance.cancel()
+            if instance.has_vehicle:
+                instance.vehicle.delete()
+            log.info(f"{instance} is canceled successfully")
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        log.error(f"{instance} can't be canceled")
+        return Response(
+            "This service registration is rejected. Therefore it can't be canceled",
+            status=status.HTTP_400_BAD_REQUEST,
+        )
 
     @extend_schema(**swaggers.SERVICE_ACCESS_CARD)
     @action(
@@ -114,6 +135,7 @@ class ServiceRegistrationView(DestroyAPIView, ReadOnlyModelViewSet):
             personal_information = PersonalInformation.objects.filter(
                 Q(citizen_id=personal_information_data["citizen_id"])
                 | Q(phone_number=personal_information_data["phone_number"])
+                | Q(email=personal_information_data["email"])
             ).first()
 
             if personal_information is None:
@@ -143,9 +165,11 @@ class ServiceRegistrationView(DestroyAPIView, ReadOnlyModelViewSet):
                 service_id=Service.ServiceType.ACCESS_CARD,
                 personal_information=personal_information,
             ):
-                log.error(f"{relative} has registered for an access card")
+                log.error(
+                    f"{relative} has registered for an access card or it's waiting for approval"
+                )
                 return Response(
-                    "This person has registered for an access card",
+                    "This person has registered for an access card or it's waiting for approval",
                     status.HTTP_400_BAD_REQUEST,
                 )
 
@@ -194,6 +218,7 @@ class ServiceRegistrationView(DestroyAPIView, ReadOnlyModelViewSet):
             personal_information = PersonalInformation.objects.filter(
                 Q(citizen_id=personal_information_data["citizen_id"])
                 | Q(phone_number=personal_information_data["phone_number"])
+                | Q(email=personal_information_data["email"])
             ).first()
 
             if personal_information is None:
@@ -218,8 +243,12 @@ class ServiceRegistrationView(DestroyAPIView, ReadOnlyModelViewSet):
                 ServiceRegistration.objects.filter(
                     apartment_id=room_number,
                     service__pk=Service.ServiceType.RESIDENT_CARD,
+                    status__in=[
+                        MyBaseServiceStatus.Status.WAITING_FOR_APPROVAL,
+                        MyBaseServiceStatus.Status.APPROVED,
+                    ],
                 ).count()
-                >= 4
+                >= self.MAXIMUM_RESIDENT_CARDS_PER_APARTMENT
             ):
                 log.error(
                     "The apartment has been registered with a maximum of 4 resident cards"
@@ -233,9 +262,11 @@ class ServiceRegistrationView(DestroyAPIView, ReadOnlyModelViewSet):
                 service_id=Service.ServiceType.RESIDENT_CARD,
                 personal_information=personal_information,
             ):
-                log.error(f"{relative} has registered for a resident card")
+                log.error(
+                    f"{relative} has registered for a resident card or it's waiting for approval"
+                )
                 return Response(
-                    "This person has registered for a resident card",
+                    "This person has registered for a resident card or it's waiting for approval",
                     status.HTTP_400_BAD_REQUEST,
                 )
 
@@ -261,7 +292,8 @@ class ServiceRegistrationView(DestroyAPIView, ReadOnlyModelViewSet):
 
     def is_valid_vehicle_limit(self, apartment_id, vehicle_type):
         vehicle_count = Vehicle.objects.filter(
-            service_registration__apartment_id=apartment_id, vehicle_type=vehicle_type
+            service_registration__apartment_id=apartment_id,
+            vehicle_type=vehicle_type,
         ).count()
 
         return vehicle_count < self.max_vehicle_counts[vehicle_type]
@@ -289,7 +321,6 @@ class ServiceRegistrationView(DestroyAPIView, ReadOnlyModelViewSet):
                 )
 
             log.info(f"{request.user}'s room is {room_number}")
-            # 2 motors, 2 bikes and 1 car per apartment
             vehicle = serializer.validated_data["vehicle"]
             if not self.is_valid_vehicle_limit(
                 apartment_id=room_number,
@@ -325,6 +356,7 @@ class ServiceRegistrationView(DestroyAPIView, ReadOnlyModelViewSet):
                 personal_information = PersonalInformation.objects.filter(
                     Q(citizen_id=personal_information_data["citizen_id"])
                     | Q(phone_number=personal_information_data["phone_number"])
+                    | Q(email=personal_information_data["email"])
                 ).first()
                 if personal_information is None:
                     personal_information = PersonalInformation.objects.create(
@@ -385,19 +417,20 @@ class ServiceRegistrationView(DestroyAPIView, ReadOnlyModelViewSet):
                 "This service does not support physical card",
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        if self.get_object().is_approved is False:
+        if not self.get_object().is_approved:
             log.error("This service registration is not being approved")
             return Response(
                 "This service registration is not being approved",
                 status=status.HTTP_400_BAD_REQUEST,
             )
         obj, created = ReissueCard.objects.get_or_create(
-            service_registration=self.get_object()
+            service_registration=self.get_object(),
+            status=MyBaseServiceStatus.Status.WAITING_FOR_APPROVAL,
         )
-        if created is False:
-            log.error("This have been reissued or it's being waited for approval")
+        if not created:
+            log.error("This person requested a card reissue and it is being processed")
             return Response(
-                "You have reissued this service or it's being rejected, canceled, pending",
+                "You have requested a card reissue and it is being processed",
                 status=status.HTTP_400_BAD_REQUEST,
             )
         NotificationManager.create_notification(
