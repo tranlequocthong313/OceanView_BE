@@ -6,7 +6,7 @@ from django.contrib import admin
 from django.db.models import Sum
 from django.db.models.base import post_save
 from django.dispatch import receiver
-from django.http import HttpRequest
+from django.http import HttpRequest, HttpResponseRedirect
 from django.utils.html import mark_safe
 from vnpay.admin import BillingAdmin
 from vnpay.models import Billing
@@ -116,18 +116,37 @@ class ProofImageAdmin(MyBaseModelAdmin):
     readonly_fields = ("_image",)
     list_filter = ("payment__status",)
     exclude = ("deleted",)
+    change_form_template = "admin/proof_image_change_form.html"
 
     @admin.display(description="Ảnh")
     def _image(self, obj):
         return mark_safe(f'<img width="500" src="{obj.image_url}" />')
 
+    def response_change(self, request, obj):
+        if "_approve-proof-image" in request.POST:
+            if obj.approve():
+                NotificationManager.create_notification(
+                    entity=obj,
+                    entity_type=EntityType.INVOICE_PROOF_IMAGE_APPROVED,
+                    filters={"resident_id": obj.payment.invoice.resident.resident_id},
+                    image=settings.LOGO,
+                )
+            return HttpResponseRedirect(".")
+        if "_reject-proof-image" in request.POST:
+            if obj.reject():
+                NotificationManager.create_notification(
+                    entity=obj,
+                    entity_type=EntityType.INVOICE_PROOF_IMAGE_REJECTED,
+                    filters={"resident_id": obj.payment.invoice.resident.resident_id},
+                    image=settings.LOGO,
+                )
+            return HttpResponseRedirect(".")
+        return super().response_change(request, obj)
+
     def has_add_permission(self, request):
         return False
 
     def has_delete_permission(self, request, obj=None):
-        return False
-
-    def has_change_permission(self, request, obj=None):
         return False
 
 

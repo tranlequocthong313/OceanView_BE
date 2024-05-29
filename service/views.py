@@ -386,9 +386,9 @@ class ServiceRegistrationView(DestroyAPIView, ReadOnlyModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
         if self.get_object().is_approved is False:
-            log.error("This service is not being approved")
+            log.error("This service registration is not being approved")
             return Response(
-                "This service is not being approved",
+                "This service registration is not being approved",
                 status=status.HTTP_400_BAD_REQUEST,
             )
         obj, created = ReissueCard.objects.get_or_create(
