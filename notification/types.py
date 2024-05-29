@@ -25,6 +25,14 @@ class EntityType(models.TextChoices):
     SERVICE_REISSUE = "SERVICE_REISSUE", _("Cấp lại")
     FEEDBACK_POST = "FEEDBACK_POST", _("Đăng phản ánh")
     INVOICE_PROOF_IMAGE_PAYMENT = "INVOICE_PROOF_IMAGE_PAYMENT", _("Thanh toán")
+    INVOICE_PROOF_IMAGE_APPROVED = (
+        "INVOICE_PROOF_IMAGE_APPROVED",
+        _("Đã duyệt thanh toán"),
+    )
+    INVOICE_PROOF_IMAGE_REJECTED = (
+        "INVOICE_PROOF_IMAGE_REJECTED",
+        _("Đã từ chối thanh toán"),
+    )
     NEWS_POST = "NEWS_POST", _("Đăng tin tức")
     INVOICE_CREATE = "INVOICE_CREATE", _("Nhận hóa đơn")
     LOCKER_ITEM_ADD = "LOCKER_ITEM_ADD", _("Đã nhận giúp")
@@ -39,6 +47,8 @@ ENTITY_TARGET = {
     "REISSUE_REJECTED": MessageTarget.RESIDENT,
     "FEEDBACK_POST": MessageTarget.ADMIN,
     "INVOICE_PROOF_IMAGE_PAYMENT": MessageTarget.ADMIN,
+    "INVOICE_PROOF_IMAGE_APPROVED": MessageTarget.RESIDENT,
+    "INVOICE_PROOF_IMAGE_REJECTED": MessageTarget.RESIDENT,
     "NEWS_POST": MessageTarget.RESIDENTS,
     "INVOICE_CREATE": MessageTarget.RESIDENT,
     "LOCKER_ITEM_ADD": MessageTarget.RESIDENT,
@@ -53,6 +63,8 @@ ENTITY_TYPE_MODEL_MAPPING = {
     "REISSUE_REJECTED": ReissueCard,
     "FEEDBACK_POST": Feedback,
     "INVOICE_PROOF_IMAGE_PAYMENT": ProofImage,
+    "INVOICE_PROOF_IMAGE_APPROVED": ProofImage,
+    "INVOICE_PROOF_IMAGE_REJECTED": ProofImage,
     "NEWS_POST": News,
     "INVOICE_CREATE": Invoice,
     "LOCKER_ITEM_ADD": Item,
@@ -74,7 +86,11 @@ ACTION_MESSAGE_MAPPING = {
     "FEEDBACK_POST": lambda entity,
     action: f"{entity.author} {action}: {entity.__str__()}",
     "INVOICE_PROOF_IMAGE_PAYMENT": lambda entity,
-    action: f"{entity.payment.invoice.resident} {action}: {entity.payment.get_method_display()}",
+    action: f"{entity.payment.invoice.resident} {action} {entity.payment.get_method_display()}",
+    "INVOICE_PROOF_IMAGE_APPROVED": lambda entity,
+    action: f"Ban quản trị {action} {entity.payment.get_method_display()}",
+    "INVOICE_PROOF_IMAGE_REJECTED": lambda entity,
+    action: f"Ban quản trị {action} {entity.payment.get_method_display()}",
     "NEWS_POST": lambda entity, _: f"{entity.__str__()}",
     "INVOICE_CREATE": lambda entity,
     action: f"{action.capitalize()} ({entity.created_date.strftime('%d/%m/%Y')})",

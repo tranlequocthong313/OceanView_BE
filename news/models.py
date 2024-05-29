@@ -1,3 +1,4 @@
+from cloudinary.models import CloudinaryField
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from django_ckeditor_5.fields import CKEditor5Field
@@ -26,10 +27,19 @@ class News(MyBaseModel):
         null=True,
     )
     is_broadcast = models.BooleanField(_("Gửi thông báo"), default=False)
+    is_banner = models.BooleanField(_("Banner"), default=False)
+    thumbnail = CloudinaryField(_("Ảnh"), null=True, blank=True)
 
     class Meta:
         verbose_name = _("Tin tức")
         verbose_name_plural = _("Tin tức")
+
+    @property
+    def thumbnail_url(self):
+        if self.thumbnail:
+            self.thumbnail.url_options.update({"secure": True})
+            return self.thumbnail.url
+        return None
 
     def __str__(self):
         return self.title

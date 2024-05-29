@@ -1,6 +1,8 @@
 from django import forms
+from django.contrib import admin
 from django.db.models.base import post_save
 from django.dispatch import receiver
+from django.utils.html import mark_safe
 from django_ckeditor_5.widgets import CKEditor5Widget
 
 from app import settings
@@ -29,6 +31,11 @@ class NewsAdmin(MyBaseModelAdmin):
     search_fields = ("title", "category__name")
     list_filter = ("category__name",)
     form = NewsForm
+    readonly_fields = ("_thumbnail",)
+
+    @admin.display(description="Ảnh")
+    def _thumbnail(self, obj):
+        return mark_safe(f'<img width="500" src="{obj.thumbnail_url}" />')
 
 
 @receiver(post_save, sender=News)

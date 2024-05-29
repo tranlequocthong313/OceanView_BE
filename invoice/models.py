@@ -11,12 +11,15 @@ from app.models import MyBaseModel, MyBaseModelWithDeletedState
 from service.models import ServiceRegistration
 
 
-# TODO: add invoice status waiting for approval when pay with proof image
 class Invoice(MyBaseModelWithDeletedState):
     class InvoiceStatus(models.TextChoices):
         PENDING = "PENDING", _("Chờ thanh toán")
         PAID = "PAID", _("Đã thanh toán")
         OVERDUE = "OVERDUE", _("Quá hạn")
+        WAITING_FOR_APPROVAL = (
+            "WAITING_FOR_APPROVAL",
+            _("Chờ phê duyệt"),
+        )  # NOTE: Proof image case
 
     id = models.CharField(_("Mã hóa đơn"), max_length=10, primary_key=True, blank=True)
     resident = models.ForeignKey(
@@ -30,7 +33,7 @@ class Invoice(MyBaseModelWithDeletedState):
     due_date = models.DateField(_("Ngày đáo hạn"))
     status = models.CharField(
         _("Trạng thái thanh toán"),
-        max_length=10,
+        max_length=30,
         choices=InvoiceStatus.choices,
         default=InvoiceStatus.PENDING,
     )
@@ -41,6 +44,16 @@ class Invoice(MyBaseModelWithDeletedState):
 
     def pay(self):
         self.status = Invoice.InvoiceStatus.PAID
+        self.save()
+        return True
+
+    def wait_for_approval(self):
+        self.status = Invoice.InvoiceStatus.WAITING_FOR_APPROVAL
+        self.save()
+        return True
+
+    def pending(self):
+        self.status = Invoice.InvoiceStatus.PENDING
         self.save()
         return True
 
@@ -99,6 +112,13 @@ class Payment(MyBaseModelWithDeletedState):
 
     def pay(self):
         self.status = Payment.PaymentStatus.SUCCESS
+        self.invoice.wait_for_approval()
+        self.save()
+        return True
+
+    def confirming(self):
+        self.status = Payment.PaymentStatus.CONFIRMING
+        self.invoice.pending()
         self.save()
         return True
 
@@ -115,10 +135,41 @@ class Payment(MyBaseModelWithDeletedState):
 
 
 class ProofImage(MyBaseModelWithDeletedState):
+    class Status(models.TextChoices):
+        WAITING_FOR_APPROVAL = "WAITING_FOR_APPROVAL", _("Chờ được xét duyệt")
+        APPROVED = "APPROVED", _("Đã được duyệt")
+        REJECTED = "REJECTED", _("Bị từ chối")
+
     image = CloudinaryField(_("Ảnh chứng từ thanh toán"))
     payment = models.ForeignKey(
         verbose_name=_("Thanh toán"), to=Payment, on_delete=models.CASCADE
     )
+    status = models.CharField(
+        _("Trạng thái"),
+        max_length=30,
+        choices=Status,
+        default=Status.WAITING_FOR_APPROVAL,
+    )
+
+    @property
+    def is_approved(self):
+        return self.status == ProofImage.Status.APPROVED
+
+    @property
+    def is_rejected(self):
+        return self.status == ProofImage.Status.REJECTED
+
+    def approve(self):
+        self.status = ProofImage.Status.APPROVED
+        self.payment.pay()
+        self.save()
+        return True
+
+    def reject(self):
+        self.status = ProofImage.Status.REJECTED
+        self.payment.confirming()
+        self.save()
+        return True
 
     class Meta(MyBaseModel.Meta):
         verbose_name = _("Ảnh chứng minh")

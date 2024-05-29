@@ -56,6 +56,7 @@ class ServiceAdmin(MyBaseModelAdmin):
     list_filter = ("id",)
 
 
+# TODO: Refactor this and re-use it for other places
 class MyBaseServiceStatusAmin(MyBaseModelAdmin):
     def post_save(self, instance):
         return instance
@@ -162,7 +163,6 @@ class ServiceRegistrationAdmin(MyBaseServiceStatusAmin):
         "personal_information",
         "resident",
         "apartment",
-        "status",
     )
 
     def approve(self, request, instance):
@@ -212,7 +212,7 @@ class ReissueCardAdmin(MyBaseServiceStatusAmin):
     )
     exclude = ("deleted",)
     list_filter = ("status",)
-    readonly_fields = ("service_registration", "status")
+    readonly_fields = ("service_registration",)
     change_form_template = "admin/service_registration_change_form.html"
 
     def post_save(self, instance):

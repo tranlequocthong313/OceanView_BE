@@ -92,7 +92,6 @@ class MyBaseServiceStatus(MyBaseModelWithDeletedState):
 
     @property
     def status_changed(self):
-        print(self.__prev_status, self.status)
         return self.__prev_status != self.status
 
     def cancel(self):

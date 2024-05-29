@@ -83,6 +83,7 @@ class InvoiceView(ListAPIView, RetrieveAPIView, ViewSet):
         proof_image = ProofImage.objects.create(
             payment=payment, image=serializer.validated_data["image"]
         )
+        invoice.wait_for_approval()
         NotificationManager.create_notification(
             entity=proof_image,
             entity_type=EntityType.INVOICE_PROOF_IMAGE_PAYMENT,
