@@ -47,6 +47,8 @@ class NotificationManager:
         if not image:
             image = sender.avatar_url or settings.LOGO
         target = ENTITY_TARGET[str(entity_type)]
+        log.info(f"Sender notification:::{sender.__str__()}")
+        log.info(f"Target notification:::{target}")
         content = NotificationContent.objects.create(
             entity_id=str(entity.pk),
             entity_type=entity_type,
@@ -58,9 +60,14 @@ class NotificationManager:
             Notification.objects.create(recipient=user, content=content, target=target)
         tokens = None
         if len(users) > 0 and target == MessageTarget.RESIDENT:
-            tokens = FCMToken.objects.filter(
-                user=users[0], device_type=FCMToken.DeviceType.ANDROID
-            ).all()
+            tokens = (
+                FCMToken.objects.filter(
+                    user=users[0], device_type=FCMToken.DeviceType.ANDROID
+                )
+                .values_list("token", flat=True)
+                .all()
+            )
+        log.info(f"Token length:::{len(tokens)}")
         message.send_notification(
             tokens=tokens,
             target=target,
