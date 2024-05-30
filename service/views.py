@@ -31,6 +31,7 @@ from .models import (
 log = get_logger(__name__)
 
 
+# NOTE: Email stuff is just hotfix
 # TODO: Refactor this code
 class ServiceRegistrationView(DestroyAPIView, ReadOnlyModelViewSet):
     serializer_class = serializers.AccessCardServiceRegistrationSerializer
@@ -132,11 +133,18 @@ class ServiceRegistrationView(DestroyAPIView, ReadOnlyModelViewSet):
                     status.HTTP_400_BAD_REQUEST,
                 )
 
-            personal_information = PersonalInformation.objects.filter(
-                Q(citizen_id=personal_information_data["citizen_id"])
-                | Q(phone_number=personal_information_data["phone_number"])
-                | Q(email=personal_information_data["email"])
-            ).first()
+            personal_information = None
+            if "email" in personal_information_data:
+                personal_information = PersonalInformation.objects.filter(
+                    Q(citizen_id=personal_information_data["citizen_id"])
+                    | Q(phone_number=personal_information_data["phone_number"])
+                    | Q(email=personal_information_data["email"])
+                ).first()
+            else:
+                personal_information = PersonalInformation.objects.filter(
+                    Q(citizen_id=personal_information_data["citizen_id"])
+                    | Q(phone_number=personal_information_data["phone_number"])
+                ).first()
 
             if personal_information is None:
                 personal_information = PersonalInformation.objects.create(
@@ -215,11 +223,18 @@ class ServiceRegistrationView(DestroyAPIView, ReadOnlyModelViewSet):
                     status=status.HTTP_403_FORBIDDEN,
                 )
 
-            personal_information = PersonalInformation.objects.filter(
-                Q(citizen_id=personal_information_data["citizen_id"])
-                | Q(phone_number=personal_information_data["phone_number"])
-                | Q(email=personal_information_data["email"])
-            ).first()
+            personal_information = None
+            if "email" in personal_information_data:
+                personal_information = PersonalInformation.objects.filter(
+                    Q(citizen_id=personal_information_data["citizen_id"])
+                    | Q(phone_number=personal_information_data["phone_number"])
+                    | Q(email=personal_information_data["email"])
+                ).first()
+            else:
+                personal_information = PersonalInformation.objects.filter(
+                    Q(citizen_id=personal_information_data["citizen_id"])
+                    | Q(phone_number=personal_information_data["phone_number"])
+                ).first()
 
             if personal_information is None:
                 personal_information = PersonalInformation.objects.create(
@@ -353,11 +368,19 @@ class ServiceRegistrationView(DestroyAPIView, ReadOnlyModelViewSet):
                 log.info(f"Registered {request.user} successfully")
             else:
                 log.debug("Register for relatives...")
-                personal_information = PersonalInformation.objects.filter(
-                    Q(citizen_id=personal_information_data["citizen_id"])
-                    | Q(phone_number=personal_information_data["phone_number"])
-                    | Q(email=personal_information_data["email"])
-                ).first()
+                personal_information = None
+                if "email" in personal_information_data:
+                    personal_information = PersonalInformation.objects.filter(
+                        Q(citizen_id=personal_information_data["citizen_id"])
+                        | Q(phone_number=personal_information_data["phone_number"])
+                        | Q(email=personal_information_data["email"])
+                    ).first()
+                else:
+                    personal_information = PersonalInformation.objects.filter(
+                        Q(citizen_id=personal_information_data["citizen_id"])
+                        | Q(phone_number=personal_information_data["phone_number"])
+                    ).first()
+
                 if personal_information is None:
                     personal_information = PersonalInformation.objects.create(
                         **personal_information_data

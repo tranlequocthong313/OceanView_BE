@@ -74,7 +74,9 @@ class Notification(MyBaseModel):
         on_delete=models.DO_NOTHING,
         db_index=True,
     )
-    has_been_read = models.BooleanField(verbose_name=_("Đã đọc"), default=False)
+    has_been_read = models.BooleanField(
+        verbose_name=_("Đã đọc"), default=False
+    )  # HACK: Why I named it like this?
     target = models.CharField(
         verbose_name=_("Đối tượng"),
         choices=MessageTarget.choices,

@@ -15,6 +15,7 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ViewSet
 
 from app import settings
+from firebase import topic
 from notification.models import FCMToken
 from service.models import MyBaseServiceStatus, Service, ServiceRegistration
 from user.models import User
@@ -489,21 +490,21 @@ class UserView(ViewSet, GenericAPIView):
         log.info("Requested to Oauth2 successfully")
 
         if r.ok:
-            print(serializer.validated_data)
             if (
                 "fcm_token" in serializer.validated_data
                 and serializer.validated_data["fcm_token"] is not None
             ):
+                fcm_token = serializer.validated_data["fcm_token"]
                 FCMToken.objects.filter(
-                    token=serializer.validated_data["fcm_token"],
+                    token=fcm_token,
                     user=request.user,
                     device_type=serializer.validated_data["device_type"],
                 ).delete()
-            response = Response(
+                topic.unsubscribe_from_topic(fcm_tokens=fcm_token, topic="resident")
+            log.info("User logout successfully")
+            return Response(
                 status=status.HTTP_204_NO_CONTENT,
             )
-            log.info("User logout successfully")
-            return response
         else:
             log.error(traceback.format_exc())
             return Response(
