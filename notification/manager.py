@@ -67,7 +67,6 @@ class NotificationManager:
                 .values_list("token", flat=True)
                 .all()
             )
-        log.info(f"Token length:::{len(tokens)}")
         message.send_notification(
             tokens=tokens,
             target=target,
