@@ -52,7 +52,7 @@ def send_notification(
         )
     elif target == MessageTarget.RESIDENT and tokens:
         return send(
-            tokens=tokens,
+            tokens=list(tokens) or [],
             notification=messaging.Notification(title=title, body=body, image=image),
             android=messaging.AndroidConfig(data=data, priority="high"),
         )

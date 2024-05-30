@@ -15,7 +15,6 @@ NOTIFICATION_POST_FCM_TOKEN = {
             value={
                 "token": "string",
                 "device_type": format.format_enum_values(FCMToken.DeviceType),
-                "user_id": "240001",
             },
             request_only=True,
         ),
