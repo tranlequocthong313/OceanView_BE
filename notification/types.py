@@ -91,7 +91,7 @@ ACTION_MESSAGE_MAPPING = {
     action: f"Ban quản trị {action} {entity.payment.get_method_display()}",
     "INVOICE_PROOF_IMAGE_REJECTED": lambda entity,
     action: f"Ban quản trị {action} {entity.payment.get_method_display()}",
-    "NEWS_POST": lambda entity, _: f"{entity.__str__()}",
+    "NEWS_POST": lambda entity, action: f"{entity.__str__()}",
     "INVOICE_CREATE": lambda entity,
     action: f"{action.capitalize()} ({entity.created_date.strftime('%d/%m/%Y')})",
     "LOCKER_ITEM_ADD": lambda entity,
