@@ -1,10 +1,9 @@
-# TODO: I have no clue how to serve this from a JS file
-# TODO: PLS FIND A WAY TO MOVE THIS OUT OF HERE :(
 from django.http import HttpResponse
 
 
+# TODO: I have no clue how to serve this from a JS file
+# TODO: PLS FIND A WAY TO MOVE THIS OUT OF HERE :(
 def service_worker(request):
-    # WARNING: LNGTM!!
     data = (
         'importScripts("https://www.gstatic.com/firebasejs/9.18.0/firebase-app-compat.js");'
         'importScripts("https://www.gstatic.com/firebasejs/9.18.0/firebase-messaging-compat.js"); '
