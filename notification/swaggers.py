@@ -1,5 +1,5 @@
 from drf_spectacular.types import OpenApiTypes
-from drf_spectacular.utils import OpenApiExample
+from drf_spectacular.utils import OpenApiExample, OpenApiParameter
 
 from notification.serializers import FCMTokenSerializer, ReadNotificationSerializer
 from utils import format
@@ -21,6 +21,49 @@ NOTIFICATION_POST_FCM_TOKEN = {
         OpenApiExample(
             "Example",
             value="Created successfully",
+            response_only=True,
+        ),
+    ],
+}
+
+NOTIFICATION_LIST = {
+    "request": ReadNotificationSerializer,
+    "responses": {200: OpenApiTypes.STR},
+    "parameters": [
+        OpenApiParameter(
+            name="source",
+            type=OpenApiTypes.STR,
+            location=OpenApiParameter.QUERY,
+            description="Notification for",
+            examples=[
+                OpenApiExample(
+                    "Example",
+                    value="admin",
+                ),
+            ],
+        ),
+    ],
+    "examples": [
+        OpenApiExample(
+            "Example",
+            value={
+                "results": [
+                    {
+                        "id": 0,
+                        "has_been_read": True,
+                        "message": "string",
+                        "content": {
+                            "id": 0,
+                            "entity_type": "SERVICE_REGISTER",
+                            "entity_id": "string",
+                            "image": "string",
+                        },
+                        "created_date": "2024-05-30T12:44:30.105Z",
+                        "updated_date": "2024-05-30T12:44:30.105Z",
+                    }
+                ],
+                "badge": 0,
+            },
             response_only=True,
         ),
     ],

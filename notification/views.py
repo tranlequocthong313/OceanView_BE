@@ -83,6 +83,7 @@ class NotificationView(NonAccessTokenPermissionMixin, ListAPIView, ViewSet):
             return serializers.AdminNotificationSerializer
         return super().get_serializer_class()
 
+    @extend_schema(**swaggers.NOTIFICATION_LIST)
     def list(self, request, *args, **kwargs):
         if self.for_admin and not request.user.is_staff:
             return Response("You do not have permission", status.HTTP_403_FORBIDDEN)
