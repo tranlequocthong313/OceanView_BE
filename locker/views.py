@@ -33,11 +33,6 @@ class LockerView(ListAPIView, ViewSet):
                 )
         return queryset
 
-    def get_serializer_class(self):
-        if self.action == "list":
-            return serializers.LockerSerializer
-        return super().get_serializer_class()
-
     @extend_schema(**swaggers.LOCKER_LIST)
     def list(self, request, *args, **kwargs):
         return super().list(request, *args, **kwargs)

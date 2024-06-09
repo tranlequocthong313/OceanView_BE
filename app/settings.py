@@ -70,6 +70,7 @@ INSTALLED_APPS = [
     "notification.apps.NotificationConfig",
     "guide.apps.GuideConfig",
     "news.apps.NewsConfig",
+    "chat.apps.ChatConfig",
 ]
 CRONJOBS = [
     ("0 0 1 * *", "invoice.tasks.create_invoices"),  # NOTE: every month
@@ -312,6 +313,7 @@ DATABASES = {
         "PASSWORD": os.environ.get("MYSQL_PASSWORD"),
         "HOST": os.environ.get("MYSQL_HOST"),
         "PORT": os.environ.get("MYSQL_PORT"),
+        "OPTIONS": {"charset": "utf8mb4"},
     }
 }
 

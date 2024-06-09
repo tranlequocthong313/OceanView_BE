@@ -9,7 +9,7 @@ from django.utils import timezone
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.decorators import action
-from rest_framework.generics import GenericAPIView
+from rest_framework.generics import GenericAPIView, ListAPIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import ViewSet
@@ -27,12 +27,22 @@ from .permissions import IsOwner
 log = get_logger(__name__)
 
 
-class UserView(ViewSet, GenericAPIView):
+class UserView(ListAPIView, ViewSet, GenericAPIView):
     serializer_class = serializers.UserSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return User.objects.all()
+        queryset = User.objects.all()
+        if query := self.request.query_params.get("q", None):
+            queryset = queryset.filter(
+                Q(personal_information__full_name__icontains=query)
+                | Q(personal_information__full_name__icontains=query)
+            )
+        if self.action == "list":
+            queryset = queryset.exclude(resident_id=self.request.user.resident_id).all()
+            if not self.request.user.is_staff:
+                queryset = queryset.filter(is_staff=True).all()
+        return queryset
 
     @extend_schema(**swaggers.USER_ACTIVE)
     @action(
@@ -164,6 +174,7 @@ class UserView(ViewSet, GenericAPIView):
                 "Something went wrong", status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
+    # TODO: Should I return both phone number and email?
     @extend_schema(**swaggers.USER_FORGOT_PASSWORD)
     @action(
         methods=["post"],
