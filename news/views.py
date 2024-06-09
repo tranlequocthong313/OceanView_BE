@@ -9,6 +9,7 @@ from news.serializers import (
 )
 
 
+# TODO: filter is banner news
 class NewsCategoryView(ListAPIView, RetrieveAPIView, ViewSet):
     queryset = NewsCategory.objects.all()
     permission_classes = [IsAuthenticated]
