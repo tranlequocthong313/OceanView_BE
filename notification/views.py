@@ -1,5 +1,6 @@
 import traceback
 
+from django.db.models import Q
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.decorators import action
@@ -9,7 +10,7 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ViewSet
 
 from firebase import topic
-from notification.types import MessageTarget
+from notification.types import EntityType, MessageTarget
 from user.permissions import NonAccessTokenPermissionMixin
 from utils import get_logger
 
@@ -70,13 +71,16 @@ class NotificationView(NonAccessTokenPermissionMixin, ListAPIView, ViewSet):
 
     def get_queryset(self):
         queryset = models.Notification.objects.filter(
-            recipient=self.request.user
-        ).order_by("-id")
+            recipient=self.request.user,
+        )
+        queryset = queryset.exclude(
+            content__entity_type=EntityType.CHAT_SEND_MESSAGE
+        )  # NOTE: should use ~Q instead of excluding, but it has an error that I didn't figure out how to fix
         if self.for_admin:
             queryset = queryset.filter(target=MessageTarget.ADMIN)
         else:
             queryset = queryset.exclude(target=MessageTarget.ADMIN)
-        return queryset
+        return queryset.order_by("-id")
 
     def get_serializer_class(self):
         if self.for_admin:

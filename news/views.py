@@ -24,3 +24,8 @@ class NewsView(ListAPIView, RetrieveAPIView, ViewSet):
 
     def get_queryset(self):
         return News.objects.filter(category_id=self.kwargs["category_id"]).all()
+
+
+class DetailNewsView(RetrieveAPIView, ViewSet):
+    permission_classes = [IsAuthenticated]
+    serializer_class = NewsSerializer
