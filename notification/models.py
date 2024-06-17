@@ -92,10 +92,11 @@ class Notification(MyBaseModel):
         is_new = not self.pk
         super().save(*args, **kwargs)
         if is_new:
-            if self.target == MessageTarget.ADMIN:
-                self.recipient.staff_unread_notifications += 1
-            else:
-                self.recipient.unread_notifications += 1
+            if self.content.entity_type != EntityType.CHAT_SEND_MESSAGE:
+                if self.target == MessageTarget.ADMIN:
+                    self.recipient.staff_unread_notifications += 1
+                else:
+                    self.recipient.unread_notifications += 1
             self.recipient.save()
 
     def read(self):

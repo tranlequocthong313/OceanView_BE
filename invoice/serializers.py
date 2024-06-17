@@ -20,7 +20,7 @@ class InvoiceDetailSerializer(ModelSerializer):
     def get_invoicedetail_set(self, instance):
         return instance.invoicedetail_set.annotate(
             service_name=F("service_registration__service__name")
-        ).values("service_name", "amount")
+        ).values("service_name", "amount", "id")
 
     class Meta:
         model = InvoiceSerializer.Meta.model

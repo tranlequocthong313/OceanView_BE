@@ -37,7 +37,7 @@ def logout_view(request):
     logout(request)
     response = redirect("/admin/")
     fcm_token = request.COOKIES.get("fcm_token")
-    print(fcm_token)
+    print("FCM TOKEN:::", fcm_token)
     FCMToken.objects.filter(
         token=fcm_token, user=user, device_type=FCMToken.DeviceType.WEB
     ).delete()

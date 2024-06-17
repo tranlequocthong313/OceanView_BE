@@ -11,19 +11,13 @@ def pay(invoice):
     if not invoice:
         raise ValueError("invoice must not be null")
     request_id = str(uuid.uuid4())
+    order_id = f"{invoice.pk}-{request_id}"
+    # NOTE: Dev and Prod env using the same momo api key, what happends is order ids are conflicted. So I add an uuid to solve it
+    print("ORDER_ID::", order_id)
     order_info = f"{invoice.resident.__str__()} thanh toán hóa đơn {invoice.__str__()}"
     amount = str(int(invoice.total_amount))
     raw_signature = (
-        "accessKey="
-        + settings.MOMO_ACCESS_KEY
-        + "&amount="
-        + amount
-        + "&extraData="
-        + ""
-        + "&ipnUrl="
-        + settings.MOMO_IPN_URL
-        + "&orderId="
-        + str(invoice.pk)
+        f"accessKey={settings.MOMO_ACCESS_KEY}&amount={amount}&extraData=&ipnUrl={settings.MOMO_IPN_URL}&orderId={order_id}"
         + "&orderInfo="
         + order_info
         + "&partnerCode="
@@ -35,7 +29,6 @@ def pay(invoice):
         + "&requestType="
         + settings.MOMO_REQUEST_TYPE
     )
-    print(raw_signature)
     h = hmac.new(
         bytes(settings.MOMO_SECRET_KEY, "utf8"),
         bytes(raw_signature, "utf8"),
@@ -48,7 +41,7 @@ def pay(invoice):
         "storeId": settings.MOMO_STORE_ID,
         "requestId": request_id,
         "amount": amount,
-        "orderId": invoice.pk,
+        "orderId": order_id,
         "orderInfo": order_info,
         "redirectUrl": settings.MOMO_REDIRECT_URL,
         "ipnUrl": settings.MOMO_IPN_URL,
@@ -57,6 +50,4 @@ def pay(invoice):
         "requestType": settings.MOMO_REQUEST_TYPE,
         "signature": signature,
     }
-    response = requests.post(settings.MOMO_ENDPOINT, json=data)
-    print(response.status_code, response.json())
-    return response
+    return requests.post(settings.MOMO_ENDPOINT, json=data)
