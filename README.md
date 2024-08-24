@@ -1,73 +1,121 @@
-# OceanView - Dự án Quản lý chung cư
+# 🌊 OceanView - Apartment Management Project 🏢
 
-Dự án Quản lý Chung cư OceanView là một hệ thống quản lý dành cho các tòa nhà chung cư, cung cấp một loạt các tính năng quản lý và tiện ích cho cả quản trị viên và cư dân. Dưới đây là một số tính năng chính của dự án:
+The **OceanView** Apartment Management Project is a management system designed for apartment buildings, offering a wide range of features and utilities for both administrators and residents. Below are some key features of the project:
 
-- **Quản lý Tài khoản:** Quản trị viên có thể tạo và quản lý tài khoản cho cư dân.
-- **Thanh Toán Phí:** Cư dân có thể thanh toán các loại phí như phí quản lý, phí gửi xe và các dịch vụ khác thông qua các phương tiện thanh toán trực tuyến.
-- **Quản lý Hoá đơn:** Cư dân có thể tra cứu và quản lý các hoá đơn đã thanh toán trên hệ thống.
-- **Quản lý Thẻ Giữ Xe:** Cư dân có thể đăng ký cho người thân để nhận thẻ giữ xe và ra vào cổng.
-- **Gửi Phản ánh:** Cư dân có thể gửi phản ánh về các vấn đề không phù hợp để ban quản trị xử lý.
-- **Khảo sát và Thống kê:** Ban quản trị có thể tạo và thống kê kết quả khảo sát từ cư dân về các hoạt động và dịch vụ tại chung cư.
+- **👤 Account Management:** Administrators can create and manage accounts for residents.
+- **💳 Fee Payments:** Residents can pay fees such as management fees, parking fees, and other services through online payment methods.
+- **🧾 Invoice Management:** Residents can view and manage their paid invoices on the system.
+- **🚗 Parking Card Management:** Residents can register for parking cards for their family members to access parking and entry gates.
+- **📢 Feedback Submission:** Residents can submit feedback on issues for the management board to address.
+- **📊 Surveys and Statistics:** The management board can create and analyze survey results from residents regarding activities and services at the apartment complex.
 
-Và còn nhiều tính năng khác.
+And many other features! 🌟
 
-## Hướng dẫn Cài đặt và Chạy dự án
+## 🛠️ Installation and Project Setup Guide
 
-### 1. Yêu cầu hệ thống
+### 1. 🖥️ System Requirements
 
-- Python (phiên bản 3.x)
-- MySQL
-- pip (để quản lý môi trường ảo Python)
+- 🐍 Python (version 3.x)
+- 🗄️ MySQL
+- 📦 pip (for managing the Python virtual environment)
 
-### 2. Cài đặt dự án
+### 2. 🚀 Project Installation
 
-1. **Clone dự án từ repository:**
+1. **Clone the project from the repository:** 
 
    ```
    git clone https://github.com/tranlequocthong313/OceanView_BE.git
    ```
 
-2. **Di chuyển vào thư mục dự án:**
+2. **Navigate to the project directory:**
 
    ```
    cd OceanView_BE
    ```
 
-3. **Tạo và kích hoạt môi trường ảo:**
+3. **Create and activate a virtual environment:**
 
    ```
    python -m venv venv
    source venv/Scripts/activate
    ```
 
-4. **Cài đặt dependencies:**
+4. **Install dependencies:**
 
    ```
    pip install -r requirements.txt
    ```
 
-### 3. Cấu hình biến môi trường
+### 3. 🔧 Environment Variables Configuration
 
-Tạo một tệp `.env` trong thư mục gốc của dự án và cấu hình các biến môi trường cần thiết, bao gồm cả cấu hình cơ sở dữ liệu MySQL.
+Create a `.env` file in the root directory of the project and configure the necessary environment variables, including the MySQL database settings.
 
-### 4. Khởi tạo cơ sở dữ liệu
+### 4. 📂 Database Initialization
 
-1. **Tạo cơ sở dữ liệu MySQL** với thông tin đã cấu hình trong `.env`.
+1. **Create a MySQL database** with the information configured in the `.env` file.
 
-2. **Chạy migrations để tạo bảng và cập nhật cơ sở dữ liệu:**
+2. **Run migrations to create tables and update the database:**
 
    ```
    python manage.py migrate
    ```
 
-### 5. Chạy dự án
+### 5. 🎉 Running the Project
 
-Sau khi hoàn thành các bước trên, bạn có thể khởi động máy chủ phát triển bằng lệnh:
+After completing the above steps, you can start the development server with the following command:
 
 ```
 python manage.py runserver
 ```
 
-Mở trình duyệt và truy cập vào `http://127.0.0.1:8000/` để xem dự án OceanView.
+Open your browser and go to `http://127.0.0.1:8000/` to view the OceanView project. 🌐
+
+Enjoy managing your apartment complex with OceanView! 🏡✨
+
+---
+
+## 📌 Use Cases
+   
+   ![Use Case](path_to_image)
+
+---
+
+## 🛠️ System Design
+
+The OceanView system is designed with a focus on scalability and ease of use:
+
+1. **📊 Database Schema:** The database schema is structured to efficiently handle large amounts of resident and transaction data.
+   
+   ![Database Schema](path_to_image)
+
+3. **🖥️ Backend Architecture:** The backend architecture is built using Python and Django, with RESTful APIs for interaction between the client and server.
+
+   ![Backend Architecture](path_to_image)
+
+---
+
+## 📷 Results and Outcomes
+
+Here are screenshots showcasing the various user interfaces of the OceanView system:
+
+1. **🏠 Dashboard:** The main dashboard for residents, displaying key information such as outstanding fees, upcoming events, and recent notices.
+
+   ![Dashboard](path_to_image)
+
+2. **💳 Payment Portal:** The payment interface where residents can view and pay their bills online.
+
+   ![Payment Portal](path_to_image)
+
+3. **🧾 Invoice Management:** A screen for viewing and managing invoices, with options to download or print receipts.
+
+   ![Invoice Management](path_to_image)
+
+4. **📢 Feedback Submission:** The feedback submission form where residents can report issues or provide suggestions.
+
+   ![Feedback Submission](path_to_image)
+
+5. **🚗 Parking Card Management:** The interface for managing parking card registrations and access.
+
+   ![Parking Card Management](path_to_image)
 
 ---
